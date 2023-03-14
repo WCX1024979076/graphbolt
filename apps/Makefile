@@ -12,7 +12,7 @@ INTE = -DEDGELONG
 
 #compilers
 $(info ************  Using CILK ************)
-PCC = g++
+PCC = g++-7
 PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA)
 LDFLAGS = -L../lib/mimalloc/out/release -lmimalloc 
 

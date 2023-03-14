@@ -49,15 +49,15 @@ int parallel_main(int argc, char *argv[]) {
 
   cout << fixed;
 
-  if (symmetric) {
+  if (symmetric) { //对称无向图
     // symmetric graph
     graph<symmetricVertex> G =
         readGraph<symmetricVertex>(iFile, symmetric, simpleFlag, debugFlag);
     G.setSymmetric(true);
     cout << "Graph created" << endl;
-    compute(G, P);
+    compute(G, P); //调用相关计算函数
     G.del();
-  } else {
+  } else { //有向图
     // asymmetric graph
     graph<asymmetricVertex> G =
         readGraph<asymmetricVertex>(iFile, symmetric, simpleFlag, debugFlag);

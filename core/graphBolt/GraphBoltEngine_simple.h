@@ -43,7 +43,7 @@ public:
   }
 
   // ======================================================================
-  // TEMPORARY STRUCTURES USED BY THE SIMPLE ENGINE
+  // TEMPORARY STRUCTURES USED BY THE SIMPLE ENGINE 相关临时结构初始化
   // ======================================================================
   void createTemporaryStructures() {
     GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
@@ -65,20 +65,20 @@ public:
                                                              end_index);
   }
   // ======================================================================
-  // TRADITIONAL INCREMENTAL COMPUTATION
+  // TRADITIONAL INCREMENTAL COMPUTATION 传统增量计算模型
   // ======================================================================
   // TODO : Currently, max_iterations = history_iterations.
   // Need to implement computation without history.
   int traditionalIncrementalComputation(int start_iteration) {
-    timer iteration_timer, phase_timer;
+    timer iteration_timer, phase_timer; //计时用
     double misc_time, copy_time, phase_time, iteration_time;
 
-    vertexSubset frontier_curr_vs(n, frontier_curr);
+    vertexSubset frontier_curr_vs(n, frontier_curr); //当前活跃点集
     bool use_delta = true;
     int iter = start_iteration;
 
     if (frontier_curr_vs.numNonzeros() == 0) {
-      converged_iteration = start_iteration;
+      converged_iteration = start_iteration; //收敛迭代
 
     } else {
       for (iter = start_iteration; iter < max_iterations; iter++) {
@@ -98,26 +98,26 @@ public:
             delta[v] = aggregationValueIdentity<AggregationValueType>();
           }
         }
-        use_delta = shouldUseDelta(iter);
+        use_delta = shouldUseDelta(iter); //用于自定义何时应该进行基于增量的增量计算执行。
 
         // ========== MISC - count active edges for AE ==========
         phase_time = phase_timer.next();
         adaptive_executor.updateCopyTime(iter, phase_time);
         adaptive_executor.updateEdgesProcessed(iter, my_graph,
-                                               frontier_curr_vs);
+                                               frontier_curr_vs); //更新迭代需要更新的边的个数
         misc_time = phase_timer.next();
         adaptive_executor.updateMiscTime(iter, phase_timer.next());
 
-        // ========== EDGE COMPUTATION ==========
+        // ========== EDGE COMPUTATION ========== 边计算
         if ((use_source_contribution) && (iter == 1)) {
           // Compute source contribution for first iteration
           parallel_for(uintV u = 0; u < n; u++) {
-            if (frontier_curr[u]) {
+            if (frontier_curr[u]) { //激活顶点u
               // compute source change in contribution
               sourceChangeInContribution<AggregationValueType, VertexValueType,
                                          GlobalInfoType>(
-                  u, source_change_in_contribution[u],
-                  vertexValueIdentity<VertexValueType>(),
+                  u, source_change_in_contribution[u], //顶点最新值
+                  vertexValueIdentity<VertexValueType>(), //顶点初始值
                   vertex_values[iter - 1][u], global_info);
             }
           }
@@ -125,12 +125,12 @@ public:
 
         parallel_for(uintV u = 0; u < n; u++) {
           if (frontier_curr[u]) {
-            // check for propagate and retract for the vertices.
+            // check for propagate and retract for the vertices. 计算聚合值
             intE outDegree = my_graph.V[u].getOutDegree();
             granular_for(j, 0, outDegree, (outDegree > 1024), {
               uintV v = my_graph.V[u].getOutNeighbor(j);
               AggregationValueType contrib_change =
-                  use_source_contribution
+                  use_source_contribution 
                       ? source_change_in_contribution[u]
                       : aggregationValueIdentity<AggregationValueType>();
 #ifdef EDGEDATA
@@ -139,17 +139,17 @@ public:
               EdgeData *edge_data = &emptyEdgeData;
 #endif
               bool ret =
-                  edgeFunction(u, v, *edge_data, vertex_values[iter - 1][u],
+                  edgeFunction(u, v, *edge_data, vertex_values[iter - 1][u], //判断是否需要更新
                                contrib_change, global_info);
               if (ret) {
                 if (use_lock) {
                   vertex_locks[v].writeLock();
-                  addToAggregation(contrib_change, delta[v], global_info);
+                  addToAggregation(contrib_change, delta[v], global_info); //添加到聚合值
                   vertex_locks[v].unlock();
                 } else {
-                  addToAggregationAtomic(contrib_change, delta[v], global_info);
+                  addToAggregationAtomic(contrib_change, delta[v], global_info); //原子操作
                 }
-                if (!frontier_next[v])
+                if (!frontier_next[v]) //如果没有激活v则对v进行激活?
                   frontier_next[v] = 1;
               }
             });
@@ -161,7 +161,7 @@ public:
 
         // ========== VERTEX COMPUTATION ==========
         parallel_for(uintV v = 0; v < n; v++) {
-          // Reset frontier for next iteration
+          // Reset frontier for next iteration 
           frontier_curr[v] = 0;
           // Process all vertices affected by EdgeMap
           if (frontier_next[v] ||
@@ -177,10 +177,10 @@ public:
             // Calculate new_value based on the updated aggregation value
             VertexValueType new_value;
             computeFunction(v, aggregation_values[iter][v],
-                            vertex_values[iter - 1][v], new_value, global_info);
+                            vertex_values[iter - 1][v], new_value, global_info); //根据聚合值重新计算顶点值
 
             // Check if change is significant
-            if (notDelZero(new_value, vertex_values[iter - 1][v], global_info)) {
+            if (notDelZero(new_value, vertex_values[iter - 1][v], global_info)) { //阈值判断
               // change is significant. Update vertex_values
               vertex_values[iter][v] = new_value;
               // Set active for next iteration.
@@ -200,7 +200,7 @@ public:
                                          GlobalInfoType>(
                   v, source_change_in_contribution[v],
                   vertex_values[iter - 1][v], vertex_values[iter][v],
-                  global_info);
+                  global_info); //重新计算聚合值
             } else {
               source_change_in_contribution[v] =
                   aggregationValueIdentity<AggregationValueType>();
@@ -210,15 +210,15 @@ public:
         phase_time = phase_timer.stop();
         adaptive_executor.updateVertexMapTime(iter, phase_time);
 
-        vertexSubset temp_vs(n, frontier_curr);
+        vertexSubset temp_vs(n, frontier_curr); //复制一遍重新计算
         frontier_curr_vs = temp_vs;
         misc_time += phase_timer.next();
         iteration_time = iteration_timer.stop();
 
         if (ae_enabled && iter == 1) {
-          adaptive_executor.setApproximateTimeForCurrIter(iteration_time);
+          adaptive_executor.setApproximateTimeForCurrIter(iteration_time); //为 CurrIter 设置大概时间
         }
-        // Convergence check
+        // Convergence check 收敛检查
         converged_iteration = iter;
         if (frontier_curr_vs.isEmpty()) {
           break;
@@ -232,7 +232,7 @@ public:
   }
 
   // ======================================================================
-  // DELTACOMPUTE
+  // DELTACOMPUTE 增量计算模型
   // ======================================================================
   void deltaCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
     timer iteration_timer, phase_timer, full_timer, pre_compute_timer;
@@ -268,28 +268,30 @@ public:
     // deltaCompute/initCompute Save a copy of global_info before we lose any
     // relevant information of the old graph For example, In PageRank, we need
     // to save the outDegree for all vertices corresponding to the old graph
+    // deltacompute/initcompute保存global_info的副本，例如我们丢失旧图的任何相关信息，
+    // 例如，在Pagerank中，我们需要保存所有与旧图相对应的顶点
     global_info_old.copy(global_info);
 
     // Update global_info based on edge additions or deletions. This is
     // application specific. For example, for pagerank, the the outDegree of
     // vertices with edgeAddition will increase and those with edgeDeletions
     // will decrease
-    global_info.processUpdates(edge_additions, edge_deletions);
+    global_info.processUpdates(edge_additions, edge_deletions); //图更新
 
     // ========== EDGE COMPUTATION - DIRECT CHANGES - for first iter ==========
     pre_compute_timer.start();
-    parallel_for(long i = 0; i < edge_additions.size; i++) {
+    parallel_for(long i = 0; i < edge_additions.size; i++) { //增加边处理
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
 
       // Update frontier and changed values
       hasSourceChangedByUpdate(source, edge_addition_enum,
                                frontier_curr[source], changed[source],
-                               global_info, global_info_old);
+                               global_info, global_info_old); //增加的边 出边 激活
       hasSourceChangedByUpdate(destination, edge_addition_enum,
                                frontier_curr[destination], changed[destination],
-                               global_info, global_info_old);
-      if (forceActivateVertexForIteration(source, 1, global_info_old)) {
+                               global_info, global_info_old); //增加的边 入边 激活
+      if (forceActivateVertexForIteration(source, 1, global_info_old)) { //第一次迭代是否需要强制计算聚合值
 
         if (frontier_curr[source]) {
           changed[source] = true;
@@ -298,7 +300,7 @@ public:
           changed[source] = true;
         }
 
-        AggregationValueType contrib_change;
+        AggregationValueType contrib_change; //计算聚合值?
         if (use_source_contribution) {
           sourceChangeInContribution<AggregationValueType, VertexValueType,
                                      GlobalInfoType>(
@@ -314,7 +316,7 @@ public:
 #endif
         bool ret =
             edgeFunction(source, destination, *edge_data,
-                         vertex_values[0][source], contrib_change, global_info);
+                         vertex_values[0][source], contrib_change, global_info); //判断聚合值是否归入最终计算
         if (ret) {
           if (use_lock) {
             vertex_locks[destination].writeLock();
@@ -331,7 +333,7 @@ public:
       }
     }
 
-    parallel_for(long i = 0; i < edge_deletions.size; i++) {
+    parallel_for(long i = 0; i < edge_deletions.size; i++) { //删除和增加同理
       uintV source = edge_deletions.E[i].source;
       uintV destination = edge_deletions.E[i].destination;
 
@@ -395,7 +397,7 @@ public:
 
     for (int iter = 1; iter < max_iterations; iter++) {
       // Perform switch if needed
-      if (should_switch_now) {
+      if (should_switch_now) { //切换到传统增量计算模型?
         converged_iteration = performSwitch(iter);
         break;
       }
@@ -412,7 +414,7 @@ public:
 
       // ================ COPY - PREPARE CURRENT ITERATION ================
       {
-        VertexValueType *temp1 = vertex_value_old_prev;
+        VertexValueType *temp1 = 0;
         vertex_value_old_prev = vertex_value_old_curr;
         vertex_value_old_curr = vertex_value_old_next;
         vertex_value_old_next = temp1;
@@ -427,8 +429,8 @@ public:
         }
       }
       copy_time += phase_timer.next();
-      // ========== EDGE COMPUTATION - TRANSITIVE CHANGES ==========
-      if ((use_source_contribution) && (iter == 1)) {
+      // ========== EDGE COMPUTATION - TRANSITIVE CHANGES ========== 计算新的权值贡献
+      if ((use_source_contribution) && (iter == 1)) { //第一次迭代 所有激活得点向邻居发送更新
         // Compute source contribution for first iteration
         parallel_for(uintV u = 0; u < n; u++) {
           if (frontier_curr[u]) {
@@ -451,7 +453,7 @@ public:
         }
       }
 
-      parallel_for(uintV u = 0; u < n; u++) {
+      parallel_for(uintV u = 0; u < n; u++) { //聚合source_change_in_contribution的值并修改顶点值
         if (frontier_curr[u]) {
           // check for propagate and retract for the vertices.
           intE outDegree = my_graph.V[u].getOutDegree();
@@ -493,7 +495,7 @@ public:
       }
       phase_time = phase_timer.next();
 
-      // ========== VERTEX COMPUTATION  ==========
+      // ========== VERTEX COMPUTATION  ========== 将 delta[v] 进行聚合并更改值
       bool use_delta_next_iteration = shouldUseDelta(iter + 1);
       parallel_for(uintV v = 0; v < n; v++) {
         // changed vertices need to be processed
@@ -569,7 +571,7 @@ public:
       }
       phase_time = phase_timer.next();
 
-      // ========== EDGE COMPUTATION - DIRECT CHANGES - for next iter ==========
+      // ========== EDGE COMPUTATION - DIRECT CHANGES - for next iter ========== 计算下次迭代
       bool has_direct_changes = false;
       parallel_for(long i = 0; i < edge_additions.size; i++) {
         uintV source = edge_additions.E[i].source;

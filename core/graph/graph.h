@@ -42,8 +42,8 @@
 using namespace std;
 
 struct edge {
-  uintV source;
-  uintV destination;
+  uintV source; //源
+  uintV destination; //终
 #ifdef EDGEDATA
   EdgeData *edgeData; // pointer to struct
   edge(uintV f, uintV s, EdgeData *e) 

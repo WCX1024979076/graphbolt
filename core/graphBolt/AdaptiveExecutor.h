@@ -27,7 +27,7 @@
 #include "../graph/vertexSubset.h"
 #include <limits>
 
-class AdaptiveExecutor {
+class AdaptiveExecutor { //自适应执行器
   int history_iterations;
   int converged_iteration;
 
