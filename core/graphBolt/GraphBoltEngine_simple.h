@@ -235,7 +235,7 @@ public:
   // DELTACOMPUTE 增量计算模型
   // ======================================================================
   void deltaCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
-    timer iteration_timer, phase_timer, full_timer, pre_compute_timer;
+    timer iteration_timer, phase_timer, full_timer, pre_;compute_timer;
     double misc_time, copy_time, phase_time, iteration_time, pre_compute_time;
     iteration_time = 0;
     full_timer.start();
@@ -243,7 +243,7 @@ public:
     // TODO : Realloc addition of new vertices
     n_old = n;
     if (edge_additions.maxVertex >= n) {
-      processVertexAddition(edge_additions.maxVertex);
+      processVertexAddition(edge_additions.maxVertex)
     }
 
     // Reset values before incremental computation
@@ -429,7 +429,7 @@ public:
         }
       }
       copy_time += phase_timer.next();
-      // ========== EDGE COMPUTATION - TRANSITIVE CHANGES ========== 计算新的权值贡献
+      // ========== EDGE COMPUTATION - aggregation_values ========== 计算新的权值贡献
       if ((use_source_contribution) && (iter == 1)) { //第一次迭代 所有激活得点向邻居发送更新
         // Compute source contribution for first iteration
         parallel_for(uintV u = 0; u < n; u++) {
