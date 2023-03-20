@@ -235,7 +235,7 @@ public:
   // DELTACOMPUTE 增量计算模型
   // ======================================================================
   void deltaCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
-    timer iteration_timer, phase_timer, full_timer, pre_;compute_timer;
+    timer iteration_timer, phase_timer, full_timer, pre_compute_timer;
     double misc_time, copy_time, phase_time, iteration_time, pre_compute_time;
     iteration_time = 0;
     full_timer.start();
@@ -243,7 +243,7 @@ public:
     // TODO : Realloc addition of new vertices
     n_old = n;
     if (edge_additions.maxVertex >= n) {
-      processVertexAddition(edge_additions.maxVertex)
+      processVertexAddition(edge_additions.maxVertex);
     }
 
     // Reset values before incremental computation
@@ -414,7 +414,7 @@ public:
 
       // ================ COPY - PREPARE CURRENT ITERATION ================
       {
-        VertexValueType *temp1 = 0;
+        VertexValueType *temp1 = vertex_value_old_prev;
         vertex_value_old_prev = vertex_value_old_curr;
         vertex_value_old_curr = vertex_value_old_next;
         vertex_value_old_next = temp1;

@@ -4,7 +4,7 @@ INTE = -DEDGELONG
 
 #compilers
 $(info ************  Using CILK ************)
-PCC = g++
+PCC = g++-7
 PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE)
 
 # dependencies
@@ -22,3 +22,6 @@ all: $(CONVERTERS)
 
 clean :
 	rm -f *.o $(CONVERTERS)
+
+run : all
+	./updateGenerator ../../inputs/$(FILE_NAME).snap ../../inputs/$(FILE_NAME)_init.snap ../../inputs/$(FILE_NAME)_operations.txt 0.5 $(BATCH_SIZE) $(BATCH_TIME)
