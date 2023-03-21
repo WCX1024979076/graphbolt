@@ -3,7 +3,7 @@
 
 #compilers
 $(info ************  Using CILK ************)
-PCC = g++-5
+PCC = g++-7
 PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTT) $(INTE)
 
 # dependencies

@@ -1,6 +1,8 @@
 #include "../../core/common/parallel.h"
 #include "../../core/common/parseCommandLine.h"
 #include "../common/graphIO.h"
+#include "../../core/common/utils.h"
+void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path);
 
 void GetRand(bool* rdm, long nonZeros, int Bnums)
 {
@@ -17,14 +19,15 @@ void GetRand(bool* rdm, long nonZeros, int Bnums)
     }
 }
 int parallel_main(int argc, char *argv[]) {
-    commandLine P(argc, argv, "[-s] <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <batchsize> <batchtime>");
-    char *iFile = P.getArgument(5);
-    char *obFile = P.getArgument(4);
-    char *oeFile = P.getArgument(3);
-    double baserate = strtod(P.getArgument(2), NULL);
-    int batchsize = atol(P.getArgument(1));
-    int batchtime = atol(P.getArgument(0));
-
+    commandLine P(argc, argv, "[-s] <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <batchsize> <batchtime> <output_pagerank>");
+    char *iFile = P.getArgument(6);
+    char *obFile = P.getArgument(5);
+    char *oeFile = P.getArgument(4);
+    double baserate = strtod(P.getArgument(3), NULL);
+    int batchsize = atol(P.getArgument(2));
+    int batchtime = atol(P.getArgument(1));
+    char *output_file_path = P.getArgument(0);
+    
     cout << "Reading graph and creating base SNAP file and edgeOperations File\n";
     edgeArray G = readSNAP(iFile);
 
@@ -65,7 +68,7 @@ int parallel_main(int argc, char *argv[]) {
     output_oefile << fixed;
     output_oefile << setprecision(VAL_PRECISION2);
 
-    while(batchtime --)
+    for(int current_batch = 0; current_batch < batchtime; current_batch++)
     {
         int add_num = 0;
         int del_num = 0;
@@ -85,6 +88,8 @@ int parallel_main(int argc, char *argv[]) {
             output_oefile << "a" << "\t" << AE[i].u << "\t" << AE[i].v << "\n";
         for (uintV i = 0; i < del_num; i++)
             output_oefile << "d" << "\t" << DE[i].u << "\t" << DE[i].v << "\n";
+        
+        CalcPangeRank(ingraph, G, current_batch, output_file_path);
     }
 
     output_obfile.close();
@@ -97,4 +102,62 @@ int parallel_main(int argc, char *argv[]) {
     free(DE);
 
     return 0;
+}
+
+
+void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path) {
+    uintV ecnt = 0;
+    uintV ncnt = 0;
+    edge *BE = newA(edge, G.nonZeros);
+    for(int i = 0; i < G.nonZeros; i++) {
+        if(ingraph[i]) {
+            BE[ecnt++] = G.E[i];
+            ncnt = max(ncnt, G.E[i].u);
+            ncnt = max(ncnt, G.E[i].v);
+        }
+    }
+
+	double eps=0.1;
+    int* d_in   = newA(int, ncnt);
+    int* d_out  = newA(int, ncnt);
+    double* ra  = newA(double, ncnt);
+    double* rb  = newA(double, ncnt);
+    for(int i = 0; i < ncnt; i++) {
+		ra[i] = 1;
+        rb[i] = 0;
+    }
+    for(int i = 0; i < ecnt; i++) {
+        d_out[BE[i].u] ++;
+        d_in[BE[i].v] ++;
+    }
+	while(eps > 0.0000001)//set ε=10^(-7), control the number of iterations
+	{
+        eps = 0;
+		for(int i = 0;i < ecnt; i++) {
+			rb[BE[i].v] += ra[BE[i].u] / d_out[BE[i].u]; //first step to initialize the rank value
+        }
+		for(int i = 0;i < ncnt; i++) {
+			rb[i] = rb[i] * 0.85 + 0.15; //add the random jumping coefficient β, and set β=0.8
+			eps += ra[i] > rb[i] ? (ra[i] - rb[i]) : (rb[i] - ra[i]);//compute the Difference between the old rank value and new rank value, and update the ε
+			ra[i] = rb[i];
+			rb[i] = 0;
+		}
+	}
+    string curr_output_file_path = output_file_path + to_string(current_batch);
+    std::cout << "Printing to file : " << curr_output_file_path << "\n";
+    ofstream output_file;
+    output_file.open(curr_output_file_path, ios::out);
+    output_file << fixed;
+    output_file << setprecision(VAL_PRECISION2);
+    for (int i = 0; i < ncnt; i++) {
+        output_file << i << " " << d_in[i] << " " << d_out[i] << " ";
+        output_file << ra[i] << "\n";
+    }
+    output_file.close();
+
+    free(d_in);
+    free(d_out);
+    free(ra);
+    free(rb);
+    return ;
 }
