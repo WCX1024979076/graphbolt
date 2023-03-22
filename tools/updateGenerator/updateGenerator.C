@@ -32,7 +32,7 @@ int parallel_main(int argc, char *argv[]) {
     edgeArray G = readSNAP(iFile);
 
     //TODO：从图文件中抽取a%的边作为基础图  
-    int Bnums = int(G.nonZeros*baserate);
+    int Bnums = int(G.nonZeros * baserate);
     bool *rdm = newA(bool, G.nonZeros);
     bool *ingraph = newA(bool, G.nonZeros);
     edge *BE = newA(edge, G.nonZeros);
@@ -68,18 +68,23 @@ int parallel_main(int argc, char *argv[]) {
     output_oefile << fixed;
     output_oefile << setprecision(VAL_PRECISION2);
 
-    for(int current_batch = 0; current_batch < batchtime; current_batch++)
+    CalcPangeRank(ingraph, G, 0, output_file_path);
+
+    for(int current_batch = 1; current_batch <= batchtime; current_batch++)
     {
         int add_num = 0;
         int del_num = 0;
         GetRand(rdm, G.nonZeros, batchsize);
         for(int i = 0; i < G.nonZeros; i++) {
             if(rdm[i]) {
-                if(ingraph[i])
+                if(ingraph[i]) {
+                    ingraph[i] = false;
                     DE[del_num++] = G.E[i];
-                else
+                }
+                else {
+                    ingraph[i] = true;
                     AE[add_num++] = G.E[i];
-                ingraph[i] = ~ingraph[i];
+                }
             }
         }
         cout << "addbatchsize " << add_num << "\t";
@@ -112,8 +117,8 @@ void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_
     for(int i = 0; i < G.nonZeros; i++) {
         if(ingraph[i]) {
             BE[ecnt++] = G.E[i];
-            ncnt = max(ncnt, G.E[i].u);
-            ncnt = max(ncnt, G.E[i].v);
+            ncnt = max(ncnt, G.E[i].u + 1);
+            ncnt = max(ncnt, G.E[i].v + 1);
         }
     }
 
@@ -125,6 +130,8 @@ void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_
     for(int i = 0; i < ncnt; i++) {
 		ra[i] = 1;
         rb[i] = 0;
+        d_in[i] = 0;
+        d_out[i] = 0;
     }
     for(int i = 0; i < ecnt; i++) {
         d_out[BE[i].u] ++;
