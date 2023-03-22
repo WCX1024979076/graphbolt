@@ -26,5 +26,5 @@ clean :
 
 PRCompare : PROutputComparator
 	for i in $(NUMBERS); do \
-		./PROutputComparator -file1 /tmp/output/pr_output$$i -file2 /tmp/output_std/pr_output$$i -ofile /tmp/diff/pr_output$$i -thresholds 8; \
+		./PROutputComparator -file1 /tmp/output/pr_output$$i -file2 /tmp/output_std/pr_output$$i -ofile $(DIFF)$$i -thresholds 8; \
 	done

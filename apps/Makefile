@@ -40,4 +40,4 @@ clean :
 	rm -f *.o *.obj $(ALL)
 
 PageRankRun : PageRank
-	./PageRank -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile /tmp/output/pr_output ../inputs/$(FILE_NAME)_init.adj
+	./PageRank -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj

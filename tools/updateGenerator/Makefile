@@ -24,4 +24,4 @@ clean :
 	rm -f *.o $(CONVERTERS)
 
 run : all
-	./updateGenerator ../../inputs/$(FILE_NAME).snap ../../inputs/$(FILE_NAME)_init.snap ../../inputs/$(FILE_NAME)_operations.txt 0.5 $(BATCH_SIZE) $(BATCH_TIME) /tmp/output_std/pr_output
+	./updateGenerator ../../inputs/$(FILE_NAME).snap ../../inputs/$(FILE_NAME)_init.snap ../../inputs/$(FILE_NAME)_operations.txt 0.5 $(BATCH_SIZE) $(BATCH_TIME) $(OUTPUT_STD)
