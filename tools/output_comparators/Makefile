@@ -1,6 +1,8 @@
 #INTT = -DLONG
 #INTE = -DEDGELONG
 
+NUMBERS := $(shell seq 1 ${BATCH_TIME})
+
 #compilers
 $(info ************  Using CILK ************)
 PCC = g++-7
@@ -23,4 +25,6 @@ clean :
 	rm -f *.o $(OUTPUT_COMPARATORS)
 
 PRCompare : PROutputComparator
-	./PROutputComparator -file1 /tmp/output/pr_output0 -file2 /tmp/output_std/pr_output0 -ofile ./run.log
+	for i in $(NUMBERS); do \
+		./PROutputComparator -file1 /tmp/output/pr_output$$i -file2 /tmp/output_std/pr_output$$i -ofile /tmp/diff/pr_output$$i -thresholds 8; \
+	done
