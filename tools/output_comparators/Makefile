@@ -1,7 +1,7 @@
 #INTT = -DLONG
 #INTE = -DEDGELONG
 
-NUMBERS := $(shell seq 1 ${BATCH_TIME})
+NUMBERS := $(shell seq 0 ${BATCH_TIME})
 
 #compilers
 $(info ************  Using CILK ************)

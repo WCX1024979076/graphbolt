@@ -2,6 +2,8 @@
 #include "../../core/common/parseCommandLine.h"
 #include "../common/graphIO.h"
 #include "../../core/common/utils.h"
+#include <cassert>
+
 void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path);
 
 void GetRand(bool* rdm, long nonZeros, int Bnums)
@@ -19,11 +21,12 @@ void GetRand(bool* rdm, long nonZeros, int Bnums)
     }
 }
 int parallel_main(int argc, char *argv[]) {
-    commandLine P(argc, argv, "[-s] <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <batchsize> <batchtime> <output_pagerank>");
-    char *iFile = P.getArgument(6);
-    char *obFile = P.getArgument(5);
-    char *oeFile = P.getArgument(4);
-    double baserate = strtod(P.getArgument(3), NULL);
+    commandLine P(argc, argv, "[-s] <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <addrate> <batchsize> <batchtime> <output_pagerank>");
+    char *iFile = P.getArgument(7);
+    char *obFile = P.getArgument(6);
+    char *oeFile = P.getArgument(5);
+    double baserate = strtod(P.getArgument(4), NULL);
+    double addrate = strtod(P.getArgument(3), NULL);
     int batchsize = atol(P.getArgument(2));
     int batchtime = atol(P.getArgument(1));
     char *output_file_path = P.getArgument(0);
@@ -33,11 +36,14 @@ int parallel_main(int argc, char *argv[]) {
 
     //TODO：从图文件中抽取a%的边作为基础图  
     int Bnums = int(G.nonZeros * baserate);
+    int Anums = int(batchsize * addrate);
     bool *rdm = newA(bool, G.nonZeros);
+    bool *rdm1 = newA(bool, G.nonZeros);
     bool *ingraph = newA(bool, G.nonZeros);
     edge *BE = newA(edge, G.nonZeros);
     edge *AE = newA(edge, G.nonZeros);
     edge *DE = newA(edge, G.nonZeros);
+    int ingraph_num = 0;
 
     GetRand(rdm, G.nonZeros, Bnums);
 
@@ -48,6 +54,7 @@ int parallel_main(int argc, char *argv[]) {
         if(rdm[i]) {
             BE[basic_num++] =  G.E[i];
             ingraph[i] = true;
+            ingraph_num++;
         }
     }
 
@@ -72,21 +79,30 @@ int parallel_main(int argc, char *argv[]) {
 
     for(int current_batch = 1; current_batch <= batchtime; current_batch++)
     {
-        int add_num = 0;
-        int del_num = 0;
-        GetRand(rdm, G.nonZeros, batchsize);
+        int add_num = 0, add_index = 0;
+        int del_num = 0, del_index = 0;
+        assert(G.nonZeros - ingraph_num >= Anums);
+        assert(ingraph_num >= batchsize - Anums);
+        GetRand(rdm, G.nonZeros - ingraph_num, Anums);
+        GetRand(rdm1, ingraph_num, batchsize - Anums);
         for(int i = 0; i < G.nonZeros; i++) {
-            if(rdm[i]) {
-                if(ingraph[i]) {
+            if(ingraph[i]) {
+                if(rdm1[del_index]) {
                     ingraph[i] = false;
                     DE[del_num++] = G.E[i];
+                    ingraph_num--;
                 }
-                else {
+                del_index++;
+            } else {
+                if(rdm[add_index]) {
                     ingraph[i] = true;
                     AE[add_num++] = G.E[i];
+                    ingraph_num++;
                 }
+                add_index++;
             }
         }
+        cout << "current_batch " << current_batch << "\t";
         cout << "addbatchsize " << add_num << "\t";
         cout << "dltbatchsize " << del_num << "\n";
         for (uintV i = 0; i < add_num; i++)
@@ -101,6 +117,7 @@ int parallel_main(int argc, char *argv[]) {
     output_oefile.close();
     
     free(rdm);
+    free(rdm1);
     free(ingraph);
     free(BE);
     free(AE);
