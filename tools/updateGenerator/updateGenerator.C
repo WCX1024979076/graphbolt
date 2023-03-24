@@ -56,9 +56,11 @@ int parallel_main(int argc, char *argv[]) {
     int del_num = 0;
     for(int i = 0; i < G.nonZeros; i++) {
         if(rdm[i]) {
-            BE[basic_num++] =  G.E[i];
+            BE[basic_num++] = G.E[i];
             ingraph[i] = true;
             ingraph_num++;
+        } else {
+            ingraph[i] = false;
         }
     }
 

@@ -1,5 +1,5 @@
-FILE_NAME = email-Eu-core
-BATCH_SIZE = 1000
+FILE_NAME = soc-sign
+BATCH_SIZE = 5000
 BATCH_TIME = 10
 OUTPUT_STD = /tmp/output_std/pr_output
 OUTPUT     = /tmp/output/pr_output
