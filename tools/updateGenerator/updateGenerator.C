@@ -3,6 +3,7 @@
 #include "../common/graphIO.h"
 #include "../../core/common/utils.h"
 #include <cassert>
+#include <ctime>
 
 void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path);
 
@@ -21,6 +22,9 @@ void GetRand(bool* rdm, long nonZeros, int Bnums)
     }
 }
 int parallel_main(int argc, char *argv[]) {
+    unsigned int seed = time(nullptr);
+    srand(seed);
+    
     commandLine P(argc, argv, "[-s] <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <addrate> <batchsize> <batchtime> <output_pagerank>");
     char *iFile = P.getArgument(7);
     char *obFile = P.getArgument(6);
