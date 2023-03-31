@@ -10,6 +10,8 @@ endif
 
 INTE = -DEDGELONG
 
+CORE_LIST := $(shell seq -s, 0 ${CORE_NUM})
+
 #compilers
 $(info ************  Using CILK ************)
 PCC = g++-7
@@ -40,4 +42,4 @@ clean :
 	rm -f *.o *.obj $(ALL)
 
 PageRankRun : PageRank
-	./PageRank  -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRank  -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
