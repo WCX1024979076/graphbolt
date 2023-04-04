@@ -19,7 +19,7 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef GRAPHBOLT_ENGINE_H
+#ifndef GRAPHBOLT_ENGINE_H 
 #define GRAPHBOLT_ENGINE_H
 
 #include "../common/utils.h"
@@ -552,7 +552,13 @@ public:
       edgeArray &edge_deletions = ingestor.getEdgeDeletions();
       // ingestor.edge_additions and ingestor.edge_deletions have been added
       // to the graph datastructure. Now, refine using it.
+
+#ifdef delta_calc
       deltaCompute(edge_additions, edge_deletions);
+#else
+      initialCompute();
+#endif
+
     }
     freeTemporaryStructures();
   }

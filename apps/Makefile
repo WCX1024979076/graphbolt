@@ -10,12 +10,12 @@ endif
 
 INTE = -DEDGELONG
 
-CORE_LIST := $(shell seq -s, 0 ${CORE_NUM})
+CORE_LIST := $(shell seq -s, 0 $$(expr $(CORE_NUM) / 2 - 1)),$(shell seq -s, 52 $$(expr 51 + $(CORE_NUM) / 2))
 
 #compilers
 $(info ************  Using CILK ************)
 PCC = g++-7
-PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA)
+PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA) -Ddelta_calc
 LDFLAGS = -L../lib/mimalloc/out/release -lmimalloc 
 
 # dependencies
@@ -42,4 +42,4 @@ clean :
 	rm -f *.o *.obj $(ALL)
 
 PageRankRun : PageRank
-	taskset -c $(CORE_LIST) ./PageRank  -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRank  -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj

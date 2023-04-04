@@ -42,6 +42,7 @@ public:
     use_source_contribution = true;
   }
 
+  ofstream notes_file;
   // ======================================================================
   // TEMPORARY STRUCTURES USED BY THE SIMPLE ENGINE 相关临时结构初始化
   // ======================================================================
@@ -70,7 +71,12 @@ public:
   // TODO : Currently, max_iterations = history_iterations.
   // Need to implement computation without history.
   int traditionalIncrementalComputation(int start_iteration) {
-    timer iteration_timer, phase_timer; //计时用
+#ifdef delta_calc
+    notes_file.open("/home/wangcx/tmp/notes_delta.txt", ios::out | ios::app);
+#else
+    notes_file.open("/home/wangcx/tmp/notes_trad.txt", ios::out | ios::app);
+#endif
+    timer iteration_timer, phase_timer, single_calc_timer; //计时用
     double misc_time, copy_time, phase_time, iteration_time;
 
     vertexSubset frontier_curr_vs(n, frontier_curr); //当前活跃点集
@@ -85,9 +91,12 @@ public:
         // initialize timers
         {
           phase_timer.start();
+          single_calc_timer.start();
           misc_time = 0;
           copy_time = 0;
         }
+
+        notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
 
         // ========== COPY - Prepare curr iteration ==========
         if (iter > 0) {
@@ -215,6 +224,8 @@ public:
         misc_time += phase_timer.next();
         iteration_time = iteration_timer.stop();
 
+        notes_file << "calc_timer = " << single_calc_timer.next() << endl;
+
         if (ae_enabled && iter == 1) {
           adaptive_executor.setApproximateTimeForCurrIter(iteration_time); //为 CurrIter 设置大概时间
         }
@@ -228,6 +239,8 @@ public:
     if (ae_enabled) {
       adaptive_executor.updateEquation(converged_iteration);
     }
+    notes_file << endl;
+    notes_file.close();
     return converged_iteration;
   }
 
@@ -235,7 +248,13 @@ public:
   // DELTACOMPUTE 增量计算模型
   // ======================================================================
   void deltaCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
-    timer iteration_timer, phase_timer, full_timer, pre_compute_timer;
+#ifdef delta_calc
+    notes_file.open("/home/wangcx/tmp/notes_delta.txt", ios::out | ios::app);
+#else
+    notes_file.open("/home/wangcx/tmp/notes_trad.txt", ios::out | ios::app);
+#endif
+    notes_file << "start batch" << endl;
+    timer iteration_timer, phase_timer, full_timer, pre_compute_timer, single_calc_timer;
     double misc_time, copy_time, phase_time, iteration_time, pre_compute_time;
     iteration_time = 0;
     full_timer.start();
@@ -398,7 +417,13 @@ public:
     for (int iter = 1; iter < max_iterations; iter++) {
       // Perform switch if needed
       if (should_switch_now) { //切换到传统增量计算模型?
+        notes_file.close();
         converged_iteration = performSwitch(iter);
+#ifdef delta_calc
+    notes_file.open("/home/wangcx/tmp/notes_delta.txt", ios::out | ios::app);
+#else
+    notes_file.open("/home/wangcx/tmp/notes_trad.txt", ios::out | ios::app);
+#endif
         break;
       }
 
@@ -406,6 +431,7 @@ public:
       {
         iteration_timer.start();
         phase_timer.start();
+        single_calc_timer.start();
         iteration_time = 0;
         misc_time = 0;
         copy_time = 0;
@@ -424,10 +450,18 @@ public:
             vertex_value_old_next[v] = vertex_values[iter][v];
           }
         } else {
+          notes_file.close();
           converged_iteration = performSwitch(iter);
+          #ifdef delta_calc
+              notes_file.open("/home/wangcx/tmp/notes_delta.txt", ios::out | ios::app);
+          #else
+              notes_file.open("/home/wangcx/tmp/notes_trad.txt", ios::out | ios::app);
+          #endif          
           break;
         }
       }
+
+      notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
       copy_time += phase_timer.next();
       // ========== EDGE COMPUTATION - aggregation_values ========== 计算新的权值贡献
       if ((use_source_contribution) && (iter == 1)) { //第一次迭代 所有激活得点向邻居发送更新
@@ -676,7 +710,7 @@ public:
 
       misc_time += phase_timer.next();
       iteration_time = iteration_timer.next();
-
+      notes_file << "calc_timer = " << single_calc_timer.next() << endl;
       // Convergence check
       if (!has_direct_changes && frontier_curr_vs.isEmpty()) {
         // There are no more active vertices
@@ -707,6 +741,8 @@ public:
 
     cout << "Finished batch : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << converged_iteration << "\n";
+    notes_file << "Finished batch" << endl << endl; 
+    notes_file.close();
     // testPrint();
     printOutput();
   }
