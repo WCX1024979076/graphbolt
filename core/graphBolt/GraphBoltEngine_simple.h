@@ -268,102 +268,137 @@ public:
 
     global_info_old.copy(global_info);
     global_info.processUpdates(edge_additions, edge_deletions); //图更新
-    
+  
     parallel_for(long i = 0; i < edge_additions.size; i++) { //增加边处理
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
-
-      // Update frontier and changed values
-      hasSourceChangedByUpdate(source, edge_addition_enum,
-                               frontier_curr[source], changed[source],
-                               global_info, global_info_old); //增加的边 出边 激活
-      hasSourceChangedByUpdate(destination, edge_addition_enum,
-                               frontier_curr[destination], changed[destination],
-                               global_info, global_info_old); //增加的边 入边 激活
+      frontier_curr[source] = frontier_curr[destination] = 1;
     }
 
     parallel_for(long i = 0; i < edge_deletions.size; i++) { //删除和增加同理
       uintV source = edge_deletions.E[i].source;
       uintV destination = edge_deletions.E[i].destination;
-
-      hasSourceChangedByUpdate(source, edge_deletion_enum,
-                               frontier_curr[source], changed[source],
-                               global_info, global_info_old);
-      hasSourceChangedByUpdate(destination, edge_deletion_enum,
-                               frontier_curr[destination], changed[destination],
-                               global_info, global_info_old);
+      frontier_curr[source] = frontier_curr[destination] = 1;
     }
 
     for (int iter = 1; iter < max_iterations; iter++) {
-      parallel_for(uintV u = 0; u < n; u++) {
-        if (frontier_curr[u]) {
-          // check for propagate and retract for the vertices.
-          intE outDegree = my_graph.V[u].getOutDegree();
-          aggregation_values[iter][u] = vertexValueIdentity<VertexValueType>();
-          granular_for(i, 0, outDegree, (outDegree > 1024), {
-            uintV v = my_graph.V[u].getOutNeighbor(i);
-            AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
-            sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
-                v, contrib_change, vertexValueIdentity<VertexValueType>(),
-                vertex_values[iter - 1][v], global_info); 
-
-// Do repropagate for edge source->destination.
-#ifdef EDGEDATA
-        EdgeData *edge_data = edge_additions.E[i].edgeData;
-#else
-        EdgeData *edge_data = &emptyEdgeData;
-#endif
-
-            bool ret = edgeFunction(u, v, *edge_data, vertex_values[iter - 1][v],
-                               contrib_change, global_info);
-
-            if (ret) {
-              if (use_lock) {
-                vertex_locks[u].writeLock();
-                if (ret) {
-                  addToAggregation(contrib_change, aggregation_values[iter][u], global_info);
-                }
-                vertex_locks[u].unlock();
-              } else {
-                if (ret) {
-                  addToAggregationAtomic(contrib_change, aggregation_values[iter][u] , global_info);
-                }
-              }
-            } 
-          });
+      // ========== COPY - Prepare curr iteration ==========
+      // Copy the aggregate and actual value from iter-1 to iter
+      parallel_for(uintV v = 0; v < n; v++) {
+        if(frontier_curr[v]) {
+          vertex_values[iter][v] = vertex_values[iter - 1][v];
+          aggregation_values[iter][v] = aggregation_values[iter - 1][v];
         }
+        delta[v] = aggregationValueIdentity<AggregationValueType>();
       }
 
-      parallel_for(uintV u = 0; u < n; u++) {
-        if(frontier_curr[u]) {
-          VertexValueType new_value;
-          computeFunction(u, aggregation_values[iter][u],
-                vertex_values[iter - 1][u], new_value, global_info);
-          if (notDelZero(new_value, vertex_values[iter - 1][u], global_info)) {
-            vertex_values[iter][u] = new_value;
-            frontier_next[u] = 1;
-            intE outDegree = my_graph.V[u].getOutDegree();
-            granular_for(i, 0, outDegree, (outDegree > 1024), {
-              uintV v = my_graph.V[u].getOutNeighbor(i);
-              frontier_next[v] = 1;
-            });
+      // ========== EDGE COMPUTATION ========== 边计算
+      if ((use_source_contribution) && (iter == 1)) {
+        // Compute source contribution for first iteration
+        parallel_for(uintV u = 0; u < n; u++) {
+          if (frontier_curr[u]) { //激活顶点u
+            // compute source change in contribution
+            sourceChangeInContribution<AggregationValueType, VertexValueType,
+                                      GlobalInfoType>(
+                u, source_change_in_contribution[u], //顶点最新值
+                vertexValueIdentity<VertexValueType>(), //顶点初始值
+                vertex_values[iter - 1][u], global_info);
           }
         }
       }
 
       parallel_for(uintV u = 0; u < n; u++) {
-        frontier_curr[u] = frontier_next[u];
-        frontier_next[u] = 0;
+        if (frontier_curr[u]) {
+          // check for propagate and retract for the vertices. 计算聚合值
+          intE outDegree = my_graph.V[u].getOutDegree();
+          granular_for(j, 0, outDegree, (outDegree > 1024), {
+            uintV v = my_graph.V[u].getOutNeighbor(j);
+            AggregationValueType contrib_change =
+                use_source_contribution 
+                    ? source_change_in_contribution[u]
+                    : aggregationValueIdentity<AggregationValueType>();
+#ifdef EDGEDATA
+            EdgeData *edge_data = my_graph.V[u].getOutEdgeData(j);
+#else
+            EdgeData *edge_data = &emptyEdgeData;
+#endif
+            bool ret =
+                edgeFunction(u, v, *edge_data, vertex_values[iter - 1][u], //判断是否需要更新
+                            contrib_change, global_info);
+            if (ret) {
+              if (use_lock) {
+                vertex_locks[v].writeLock();
+                addToAggregation(contrib_change, delta[v], global_info); //添加到聚合值
+                vertex_locks[v].unlock();
+              } else {
+                addToAggregationAtomic(contrib_change, delta[v], global_info); //原子操作
+              }
+              if (!frontier_next[v]) //如果没有激活v则对v进行激活?
+                frontier_next[v] = 1;
+            }
+          });
+        }
       }
-      vertexSubset temp_vs(n, frontier_curr);
-      cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
-      if(temp_vs.isEmpty())
+
+      // ========== VERTEX COMPUTATION ==========
+      parallel_for(uintV v = 0; v < n; v++) {
+        // Reset frontier for next iteration 
+        frontier_curr[v] = 0;
+        // Process all vertices affected by EdgeMap
+        if (frontier_next[v] ||
+            forceComputeVertexForIteration(v, iter, global_info)) {
+
+          frontier_next[v] = 0;
+          // Update aggregation value and reset change received[v] (i.e.
+          // delta[v])
+          addToAggregation(delta[v], aggregation_values[iter][v],
+                          global_info);
+          delta[v] = aggregationValueIdentity<AggregationValueType>();
+
+          // Calculate new_value based on the updated aggregation value
+          VertexValueType new_value;
+          computeFunction(v, aggregation_values[iter][v],
+                          vertex_values[iter - 1][v], new_value, global_info); //根据聚合值重新计算顶点值
+
+          // Check if change is significant
+          if (notDelZero(new_value, vertex_values[iter - 1][v], global_info)) { //阈值判断
+            // change is significant. Update vertex_values
+            vertex_values[iter][v] = new_value;
+            // Set active for next iteration.
+            frontier_curr[v] = 1;
+          } else {
+            // change is not significant. Copy vertex_values[iter-1]
+            vertex_values[iter][v] = vertex_values[iter - 1][v];
+          }
+        }
+        frontier_curr[v] =
+            frontier_curr[v] ||
+            forceActivateVertexForIteration(v, iter + 1, global_info);
+        if (frontier_curr[v]) {
+          if (use_source_contribution) {
+            // update source_contrib for next iteration
+            sourceChangeInContribution<AggregationValueType, VertexValueType,
+                                      GlobalInfoType>(
+                v, source_change_in_contribution[v],
+                vertex_values[iter - 1][v], vertex_values[iter][v],
+                global_info); //重新计算聚合值
+          } else {
+            source_change_in_contribution[v] =
+                aggregationValueIdentity<AggregationValueType>();
+          }
+        }
+      }
+
+      vertexSubset temp_vs(n, frontier_curr); //复制一遍重新计算
+
+      if (temp_vs.isEmpty()) {
         break;
+      }
     }
     cout << "tegra calc end" << endl;
     printOutput();
   }
-
+ 
   // ======================================================================
   // DELTACOMPUTE 增量计算模型
   // ======================================================================
@@ -813,7 +848,7 @@ public:
               vertex_locks[destination].unlock();
 
             } else {
-              removeFromAggregationAtomic(contrib_change, delta[destination],
+              removeFromAggregationAtomic(contrib_ change, delta[destination],
                                           global_info_old);
             }
             if (!changed[destination])
