@@ -10,7 +10,7 @@ endif
 
 INTE = -DEDGELONG
 
-CORE_LIST := $(shell seq -s, 26 25 + $$(expr $(CORE_NUM) / 2 - 1)),$(shell seq -s, 78 $$(expr 77 + $(CORE_NUM) / 2))
+CORE_LIST := $(shell seq -s, 26 $$(expr 25 + $(CORE_NUM) / 2)),$(shell seq -s, 78 $$(expr 77 + $(CORE_NUM) / 2))
 
 #compilers
 $(info ************  Using CILK ************)

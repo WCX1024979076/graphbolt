@@ -244,6 +244,126 @@ public:
     return converged_iteration;
   }
 
+#define COMMA ,
+
+  // ======================================================================
+  // Tegra 增量计算模型
+  // ======================================================================
+  void tegraCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
+    cout << "Tegra calc starter" << endl;
+    // TODO : Realloc addition of new vertices
+    n_old = n;
+    if (edge_additions.maxVertex >= n) {
+      processVertexAddition(edge_additions.maxVertex);
+    }
+    
+    // Reset values before incremental computation
+    parallel_for(uintV v = 0; v < n; v++) {
+      frontier_curr[v] = 0;
+      frontier_next[v] = 0;
+
+      vertex_value_old_prev[v] = vertexValueIdentity<VertexValueType>();
+      vertex_value_old_curr[v] = vertexValueIdentity<VertexValueType>();
+    }
+
+    global_info_old.copy(global_info);
+    global_info.processUpdates(edge_additions, edge_deletions); //图更新
+    
+    parallel_for(long i = 0; i < edge_additions.size; i++) { //增加边处理
+      uintV source = edge_additions.E[i].source;
+      uintV destination = edge_additions.E[i].destination;
+
+      // Update frontier and changed values
+      hasSourceChangedByUpdate(source, edge_addition_enum,
+                               frontier_curr[source], changed[source],
+                               global_info, global_info_old); //增加的边 出边 激活
+      hasSourceChangedByUpdate(destination, edge_addition_enum,
+                               frontier_curr[destination], changed[destination],
+                               global_info, global_info_old); //增加的边 入边 激活
+    }
+
+    parallel_for(long i = 0; i < edge_deletions.size; i++) { //删除和增加同理
+      uintV source = edge_deletions.E[i].source;
+      uintV destination = edge_deletions.E[i].destination;
+
+      hasSourceChangedByUpdate(source, edge_deletion_enum,
+                               frontier_curr[source], changed[source],
+                               global_info, global_info_old);
+      hasSourceChangedByUpdate(destination, edge_deletion_enum,
+                               frontier_curr[destination], changed[destination],
+                               global_info, global_info_old);
+    }
+
+    for (int iter = 1; iter < max_iterations; iter++) {
+      parallel_for(uintV u = 0; u < n; u++) {
+        if (frontier_curr[u]) {
+          // check for propagate and retract for the vertices.
+          intE outDegree = my_graph.V[u].getOutDegree();
+          aggregation_values[iter][u] = vertexValueIdentity<VertexValueType>();
+          granular_for(i, 0, outDegree, (outDegree > 1024), {
+            uintV v = my_graph.V[u].getOutNeighbor(i);
+            AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
+            sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
+                v, contrib_change, vertexValueIdentity<VertexValueType>(),
+                vertex_values[iter - 1][v], global_info); 
+
+// Do repropagate for edge source->destination.
+#ifdef EDGEDATA
+        EdgeData *edge_data = edge_additions.E[i].edgeData;
+#else
+        EdgeData *edge_data = &emptyEdgeData;
+#endif
+
+            bool ret = edgeFunction(u, v, *edge_data, vertex_values[iter - 1][v],
+                               contrib_change, global_info);
+
+            if (ret) {
+              if (use_lock) {
+                vertex_locks[u].writeLock();
+                if (ret) {
+                  addToAggregation(contrib_change, aggregation_values[iter][u], global_info);
+                }
+                vertex_locks[u].unlock();
+              } else {
+                if (ret) {
+                  addToAggregationAtomic(contrib_change, aggregation_values[iter][u] , global_info);
+                }
+              }
+            } 
+          });
+        }
+      }
+
+      parallel_for(uintV u = 0; u < n; u++) {
+        if(frontier_curr[u]) {
+          VertexValueType new_value;
+          computeFunction(u, aggregation_values[iter][u],
+                vertex_values[iter - 1][u], new_value, global_info);
+          if (notDelZero(new_value, vertex_values[iter - 1][u], global_info)) {
+            vertex_values[iter][u] = new_value;
+            frontier_next[u] = 1;
+            intE outDegree = my_graph.V[u].getOutDegree();
+            granular_for(i, 0, outDegree, (outDegree > 1024), {
+              uintV v = my_graph.V[u].getOutNeighbor(i);
+              frontier_next[v] = 1;
+            });
+          }
+        }
+      }
+
+      parallel_for(uintV u = 0; u < n; u++) {
+        frontier_curr[u] = frontier_next[u];
+        frontier_next[u] = 0;
+      }
+      vertexSubset temp_vs(n, frontier_curr);
+      cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
+      if(temp_vs.isEmpty())
+        break;
+    }
+    cout << "tegra calc end" << endl;
+    printOutput();
+  }
+
   // ======================================================================
   // DELTACOMPUTE 增量计算模型
   // ======================================================================

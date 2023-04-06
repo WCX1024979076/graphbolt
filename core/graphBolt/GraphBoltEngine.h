@@ -554,7 +554,8 @@ public:
       // to the graph datastructure. Now, refine using it.
 
 #ifdef delta_calc
-      deltaCompute(edge_additions, edge_deletions);
+      // deltaCompute(edge_additions, edge_deletions);
+      tegraCompute(edge_additions, edge_deletions);
 #else
       initialCompute();
 #endif
@@ -589,7 +590,9 @@ public:
   virtual int traditionalIncrementalComputation(int start_iteration) = 0;
   virtual void deltaCompute(edgeArray &edge_additions,
                             edgeArray &edge_deletions) = 0;
-
+  
+  virtual void tegraCompute(edgeArray &edge_additions,
+                            edgeArray &edge_deletions) = 0;
   // ======================================================================
   // ADAPTIVE SWITCHING TO TRADITIONAL INCREMENTAL COMPUTATION
   // ======================================================================
