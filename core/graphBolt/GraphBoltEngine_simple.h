@@ -251,46 +251,40 @@ public:
   // ======================================================================
   void tegraCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
     cout << "Tegra calc starter" << endl;
-    // TODO : Realloc addition of new vertices
-    n_old = n;
-    if (edge_additions.maxVertex >= n) {
-      processVertexAddition(edge_additions.maxVertex);
-    }
-    
-    // Reset values before incremental computation
-    parallel_for(uintV v = 0; v < n; v++) {
-      frontier_curr[v] = 0;
-      frontier_next[v] = 0;
-
-      vertex_value_old_prev[v] = vertexValueIdentity<VertexValueType>();
-      vertex_value_old_curr[v] = vertexValueIdentity<VertexValueType>();
-    }
-
-    global_info_old.copy(global_info);
     global_info.processUpdates(edge_additions, edge_deletions); //图更新
-  
-    parallel_for(long i = 0; i < edge_additions.size; i++) { //增加边处理
+    parallel_for(long i = 0; i < edge_additions.size; i++) 
+    {
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
+
       frontier_curr[source] = frontier_curr[destination] = 1;
     }
 
-    parallel_for(long i = 0; i < edge_deletions.size; i++) { //删除和增加同理
+    parallel_for(long i = 0; i < edge_deletions.size; i++) 
+    {
       uintV source = edge_deletions.E[i].source;
       uintV destination = edge_deletions.E[i].destination;
+
       frontier_curr[source] = frontier_curr[destination] = 1;
     }
 
+    parallel_for(uintV v = 0; v < n; v++)
+    {
+      frontier_curr[v] = 1;
+      frontier_next[v] = 0;
+    }
+    bool use_delta = true;
     for (int iter = 1; iter < max_iterations; iter++) {
-      // ========== COPY - Prepare curr iteration ==========
-      // Copy the aggregate and actual value from iter-1 to iter
-      parallel_for(uintV v = 0; v < n; v++) {
-        if(frontier_curr[v]) {
+
+      if (iter > 0) {
+        // Copy the aggregate and actual value from iter-1 to iter
+        parallel_for(uintV v = 0; v < n; v++) {
           vertex_values[iter][v] = vertex_values[iter - 1][v];
           aggregation_values[iter][v] = aggregation_values[iter - 1][v];
+          delta[v] = aggregationValueIdentity<AggregationValueType>();
         }
-        delta[v] = aggregationValueIdentity<AggregationValueType>();
       }
+      use_delta = shouldUseDelta(iter); //用于自定义何时应该进行基于增量的增量计算执行。
 
       // ========== EDGE COMPUTATION ========== 边计算
       if ((use_source_contribution) && (iter == 1)) {
@@ -299,7 +293,7 @@ public:
           if (frontier_curr[u]) { //激活顶点u
             // compute source change in contribution
             sourceChangeInContribution<AggregationValueType, VertexValueType,
-                                      GlobalInfoType>(
+                                        GlobalInfoType>(
                 u, source_change_in_contribution[u], //顶点最新值
                 vertexValueIdentity<VertexValueType>(), //顶点初始值
                 vertex_values[iter - 1][u], global_info);
@@ -324,7 +318,7 @@ public:
 #endif
             bool ret =
                 edgeFunction(u, v, *edge_data, vertex_values[iter - 1][u], //判断是否需要更新
-                            contrib_change, global_info);
+                              contrib_change, global_info);
             if (ret) {
               if (use_lock) {
                 vertex_locks[v].writeLock();
@@ -352,7 +346,7 @@ public:
           // Update aggregation value and reset change received[v] (i.e.
           // delta[v])
           addToAggregation(delta[v], aggregation_values[iter][v],
-                          global_info);
+                            global_info);
           delta[v] = aggregationValueIdentity<AggregationValueType>();
 
           // Calculate new_value based on the updated aggregation value
@@ -378,7 +372,7 @@ public:
           if (use_source_contribution) {
             // update source_contrib for next iteration
             sourceChangeInContribution<AggregationValueType, VertexValueType,
-                                      GlobalInfoType>(
+                                        GlobalInfoType>(
                 v, source_change_in_contribution[v],
                 vertex_values[iter - 1][v], vertex_values[iter][v],
                 global_info); //重新计算聚合值
@@ -848,7 +842,7 @@ public:
               vertex_locks[destination].unlock();
 
             } else {
-              removeFromAggregationAtomic(contrib_ change, delta[destination],
+              removeFromAggregationAtomic(contrib_change, delta[destination],
                                           global_info_old);
             }
             if (!changed[destination])
