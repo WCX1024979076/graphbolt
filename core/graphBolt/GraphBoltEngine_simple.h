@@ -261,7 +261,7 @@ public:
     parallel_for(uintV v = 0; v < n; v++) {
       frontier_curr[v] = 0;
       frontier_next[v] = 0;
-      changed[v] = 1;
+      changed[v] = 0;
     }
 
     global_info.processUpdates(edge_additions, edge_deletions);
@@ -294,7 +294,7 @@ public:
 
     for (int iter = 1; iter < max_iterations; iter++) {
       parallel_for(uintV v = 0; v < n; v++) {
-        if(!changed[v]) {
+        if(changed[v]) {
           vertex_values[iter][v] = vertex_values[iter - 1][v];
         }
         if (frontier_curr[v]) {
@@ -348,9 +348,9 @@ public:
               uintV v = my_graph.V[u].getOutNeighbor(i);
               frontier_next[v] = 1;
             });
+            changed[u] = 1;
           } else {
             vertex_values[iter][u] = new_value;
-            changed[u] = 0;
           }
         }
       }
