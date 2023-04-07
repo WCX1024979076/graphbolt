@@ -261,6 +261,7 @@ public:
     parallel_for(uintV v = 0; v < n; v++) {
       frontier_curr[v] = 0;
       frontier_next[v] = 0;
+      changed[v] = 1;
     }
 
     global_info.processUpdates(edge_additions, edge_deletions);
@@ -270,6 +271,7 @@ public:
       uintV destination = edge_additions.E[i].destination;
 
       frontier_curr[source] = 1;
+      frontier_curr[destination] = 1;
     }
 
     parallel_for(long i = 0; i < edge_deletions.size; i++) {
@@ -277,6 +279,7 @@ public:
       uintV destination = edge_deletions.E[i].destination;
 
       frontier_curr[source] = 1;
+      frontier_curr[destination] = 1;
     }
 
     parallel_for(uintV u = 0; u < n; u++) { // 一跳邻居激活
@@ -290,17 +293,20 @@ public:
     }
 
     for (int iter = 1; iter < max_iterations; iter++) {
-      parallel_for(uintV u = 0; u < n; u++) {
-        if (frontier_curr[u]) {
+      parallel_for(uintV v = 0; v < n; v++) {
+        if(!changed[v]) {
+          vertex_values[iter][v] = vertex_values[iter - 1][v];
+        }
+        if (frontier_curr[v]) {
           // check for propagate and retract for the vertices.
-          intE inDegree = my_graph.V[u].getInDegree();
-          aggregation_values[iter][u] = vertexValueIdentity<VertexValueType>();
+          intE inDegree = my_graph.V[v].getInDegree();
+          aggregation_values[iter][v] = vertexValueIdentity<VertexValueType>();
           granular_for(i, 0, inDegree, (inDegree > 1024), {
-            uintV v = my_graph.V[u].getInNeighbor(i);
+            uintV u = my_graph.V[v].getInNeighbor(i);
             AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
             sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
-                v, contrib_change, vertexValueIdentity<VertexValueType>(),
-                vertex_values[iter - 1][v], global_info);
+                u, contrib_change, vertexValueIdentity<VertexValueType>(),
+                vertex_values[iter - 1][u], global_info);
 
 // Do repropagate for edge source->destination.
 #ifdef EDGEDATA
@@ -309,19 +315,19 @@ public:
         EdgeData *edge_data = &emptyEdgeData;
 #endif
 
-            bool ret = edgeFunction(u, v, *edge_data, vertex_values[iter - 1][v],
+            bool ret = edgeFunction(u, v, *edge_data, vertex_values[iter - 1][u],
                                contrib_change, global_info);
 
             if (ret) {
               if (use_lock) {
-                vertex_locks[u].writeLock();
+                vertex_locks[v].writeLock();
                 if (ret) {
-                  addToAggregation(contrib_change, aggregation_values[iter][u], global_info);
+                  addToAggregation(contrib_change, aggregation_values[iter][v], global_info);
                 }
-                vertex_locks[u].unlock();
+                vertex_locks[v].unlock();
               } else {
                 if (ret) {
-                  addToAggregationAtomic(contrib_change, aggregation_values[iter][u] , global_info);
+                  addToAggregationAtomic(contrib_change, aggregation_values[iter][v] , global_info);
                 }
               }
             } 
@@ -342,6 +348,9 @@ public:
               uintV v = my_graph.V[u].getOutNeighbor(i);
               frontier_next[v] = 1;
             });
+          } else {
+            vertex_values[iter][u] = new_value;
+            changed[u] = 0;
           }
         }
       }
@@ -352,11 +361,32 @@ public:
       }
       vertexSubset temp_vs(n, frontier_curr);
       // cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
-      if(temp_vs.isEmpty())
-        break;
+      if(temp_vs.isEmpty()) {
+        if (iter == converged_iteration) {
+          break;
+        } else if (iter > converged_iteration) {
+          assert(("Missed switching to Traditional incremental computing when "
+                  "iter == converged_iter",
+                  false));
+        } else {
+          // Values stable for the changed vertices at this iteration.
+          // But, the changed vertices might receive new changes. So,
+          // continue loop until iter == converged_iteration vertices may
+          // still not have converged. So, keep continuing until
+          // converged_iteration is reached.
+        } 
+      }
     }
     cout << "tegra calc end" << endl;
     printOutput();
+    // for(int i = 0; i <= converged_iteration; i++)
+    // {
+    //   for(uintV u = 0; u < n; u++)
+    //   {
+    //     cout << vertex_values[i][u] << " ";
+    //   }
+    //   cout << endl;
+    // }
     // for(uintV u = 0; u < n; u++) 
     // {
     //   cout << "u:" << u <<endl;
