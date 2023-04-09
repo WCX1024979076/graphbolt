@@ -270,29 +270,32 @@ public:
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
 
-      frontier_curr[source] = 1;
       frontier_curr[destination] = 1;
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr[v] = 1;
+      });
     }
 
     parallel_for(long i = 0; i < edge_deletions.size; i++) {
       uintV source = edge_deletions.E[i].source;
       uintV destination = edge_deletions.E[i].destination;
 
-      frontier_curr[source] = 1;
       frontier_curr[destination] = 1;
-    }
-
-    parallel_for(uintV u = 0; u < n; u++) { // 一跳邻居激活
-      if (frontier_curr[u]) {
-        intE outDegree = my_graph.V[u].getOutDegree();
-        granular_for(i, 0, outDegree, (outDegree > 1024), {
-          uintV v = my_graph.V[u].getOutNeighbor(i);
-          frontier_curr[v] = 1;
-        });
-      }
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr[v] = 1;
+      });
     }
 
     for (int iter = 1; iter < max_iterations; iter++) {
+      if(iter > converged_iteration)
+      {
+        converged_iteration = performSwitch(iter);
+        break;
+      }
       parallel_for(uintV v = 0; v < n; v++) {
         if(changed[v]) {
           vertex_values[iter][v] = vertex_values[iter - 1][v];
@@ -350,7 +353,7 @@ public:
             });
             changed[u] = 1;
           } else {
-            vertex_values[iter][u] = new_value;
+            vertex_values[iter][u] = vertex_values[iter - 1][u];
           }
         }
       }
