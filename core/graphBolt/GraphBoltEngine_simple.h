@@ -406,7 +406,6 @@ public:
 #else
     notes_file.open("/home/wangcx/tmp/notes_trad.txt", ios::out | ios::app);
 #endif
-    notes_file << "start batch" << endl;
     timer iteration_timer, phase_timer, full_timer, pre_compute_timer, single_calc_timer;
     double misc_time, copy_time, phase_time, iteration_time, pre_compute_time;
     iteration_time = 0;
@@ -894,7 +893,7 @@ public:
 
     cout << "Finished batch : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << converged_iteration << "\n";
-    notes_file << "Finished batch" << endl << endl; 
+    notes_file << endl;
     notes_file.close();
     // testPrint();
     printOutput();

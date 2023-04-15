@@ -554,9 +554,10 @@ public:
       // to the graph datastructure. Now, refine using it.
 
 #ifdef delta_calc
-      // deltaCompute(edge_additions, edge_deletions);
+      deltaCompute(edge_additions, edge_deletions);
+#elif defined(tegra_calc)
       tegraCompute(edge_additions, edge_deletions);
-#else
+#else 
       initialCompute();
 #endif
 
