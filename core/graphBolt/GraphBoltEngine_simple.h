@@ -270,11 +270,12 @@ public:
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
 
-      frontier_curr[destination] = 1;
+      //frontier_curr[destination] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
+        changed[v] = 1;
       });
     }
 
@@ -283,10 +284,12 @@ public:
       uintV destination = edge_deletions.E[i].destination;
 
       frontier_curr[destination] = 1;
+      changed[destination] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
+        changed[v] = 1;
       });
     }
 
@@ -297,13 +300,11 @@ public:
         break;
       }
       parallel_for(uintV v = 0; v < n; v++) {
-        if(changed[v]) {
-          vertex_values[iter][v] = vertex_values[iter - 1][v];
-        }
         if (frontier_curr[v]) {
           // check for propagate and retract for the vertices.
           intE inDegree = my_graph.V[v].getInDegree();
           aggregation_values[iter][v] = vertexValueIdentity<VertexValueType>();
+          
           granular_for(i, 0, inDegree, (inDegree > 1024), {
             uintV u = my_graph.V[v].getInNeighbor(i);
             AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
@@ -339,6 +340,9 @@ public:
       }
 
       parallel_for(uintV u = 0; u < n; u++) {
+        if(changed[u]) {
+          vertex_values[iter][u] = vertex_values[iter - 1][u];
+        }
         if(frontier_curr[u]) {
           VertexValueType new_value;
           computeFunction(u, aggregation_values[iter][u],
