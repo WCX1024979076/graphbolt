@@ -271,6 +271,8 @@ public:
       uintV destination = edge_additions.E[i].destination;
 
       //frontier_curr[destination] = 1;
+      //frontier_curr[source] = 1;
+      //changed[source] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
@@ -285,6 +287,8 @@ public:
 
       frontier_curr[destination] = 1;
       changed[destination] = 1;
+      //frontier_curr[source] = 1;
+      //changed[source] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
@@ -339,15 +343,12 @@ public:
         }
       }
 
-      parallel_for(uintV u = 0; u < n; u++) {
-        if(changed[u]) {
-          vertex_values[iter][u] = vertex_values[iter - 1][u];
-        }
+      parallel_for(uintV u = 0; u < n; u++) { 
         if(frontier_curr[u]) {
           VertexValueType new_value;
           computeFunction(u, aggregation_values[iter][u],
-                vertex_values[iter - 1][u], new_value, global_info);
-          if (notDelZero(new_value, vertex_values[iter - 1][u], global_info)) {
+              vertex_values[iter - 1][u], new_value, global_info);
+          if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info)) || (notDelZero(vertex_values[iter - 1][u], vertex_values[iter][u], global_info_old))) {
             vertex_values[iter][u] = new_value;
             frontier_next[u] = 1;
             intE outDegree = my_graph.V[u].getOutDegree();
@@ -360,14 +361,18 @@ public:
             vertex_values[iter][u] = vertex_values[iter - 1][u];
           }
         }
+        else if(changed[u]) {
+          vertex_values[iter][u] = vertex_values[iter - 1][u];
+        }
       }
 
+      vertexSubset temp_vs(n, frontier_curr);
       parallel_for(uintV u = 0; u < n; u++) {
         frontier_curr[u] = frontier_next[u];
         frontier_next[u] = 0;
       }
-      vertexSubset temp_vs(n, frontier_curr);
-      // cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
+      
+      //cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
       if(temp_vs.isEmpty()) {
         if (iter == converged_iteration) {
           break;
@@ -617,7 +622,8 @@ public:
         }
       }
 
-      notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
+      //notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
+      //cout << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << endl;
       copy_time += phase_timer.next();
       // ========== EDGE COMPUTATION - aggregation_values ========== 计算新的权值贡献
       if ((use_source_contribution) && (iter == 1)) { //第一次迭代 所有激活得点向邻居发送更新
