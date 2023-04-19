@@ -268,17 +268,11 @@ public:
     global_info_old.copy(global_info);
     global_info.processUpdates(edge_additions, edge_deletions);
 
-    //cout << global_info_old.getInDegree(17715) << " " << global_info_old.getOutDegree(17715) << endl;
-    //cout << global_info.getInDegree(17715) << " " << global_info.getOutDegree(17715) << endl;
-
     parallel_for(long i = 0; i < edge_additions.size; i++) { 
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
       
-      //if (global_info.getOutDegree(source) != global_info_old.getOutDegree(source) && global_info_old.getInDegree(source) == 0 && global_info_old.getOutDegree(source) == 0) {
-        frontier_curr[source] = 1;
-        //changed[source] = 1;
-      //}
+      frontier_curr[source] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
@@ -299,7 +293,7 @@ public:
     }
 
     for (int iter = 1; iter < max_iterations; iter++) {
-      if(iter > converged_iteration)
+      if(iter >= converged_iteration)
       {
         converged_iteration = performSwitch(iter);
         break;
@@ -360,6 +354,7 @@ public:
             changed[u] = 1;
           } else if ((notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
               vertex_values[iter][u] = vertex_values[iter - 1][u];
+              aggregation_values[iter][u] = aggregation_values[iter - 1][u];
               frontier_next[u] = 1;
               intE outDegree = my_graph.V[u].getOutDegree();
               granular_for(i, 0, outDegree, (outDegree > 1024), {
@@ -369,6 +364,7 @@ public:
               changed[u] = 1;
           } else {
             vertex_values[iter][u] = vertex_values[iter - 1][u];
+            aggregation_values[iter][u] = aggregation_values[iter - 1][u];
           }
         } else if(changed[u]) {
           vertex_values[iter][u] = vertex_values[iter - 1][u];
@@ -380,9 +376,7 @@ public:
         uintV source = edge_additions.E[i].source;
         uintV destination = edge_additions.E[i].destination;
 
-        //if (global_info.getOutDegree(source) != global_info_old.getOutDegree(source) && global_info_old.getInDegree(source) == 0 && global_info_old.getOutDegree(source) == 0) {
-          frontier_next[source] = 1;
-        //}
+        frontier_next[source] = 1;
         intE outDegree = my_graph.V[source].getOutDegree();
         granular_for(i, 0, outDegree, (outDegree > 1024), {
           uintV v = my_graph.V[source].getOutNeighbor(i);
@@ -422,7 +416,7 @@ public:
           // continue loop until iter == converged_iteration vertices may
           // still not have converged. So, keep continuing until
           // converged_iteration is reached.
-        } 
+        }
       }
     }
     cout << "tegra calc end" << endl;
