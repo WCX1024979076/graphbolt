@@ -262,22 +262,27 @@ public:
       frontier_curr[v] = 0;
       frontier_next[v] = 0;
       changed[v] = 0;
+      source_change_in_contribution[v] = aggregationValueIdentity<AggregationValueType>();
     }
 
+    global_info_old.copy(global_info);
     global_info.processUpdates(edge_additions, edge_deletions);
+
+    //cout << global_info_old.getInDegree(17715) << " " << global_info_old.getOutDegree(17715) << endl;
+    //cout << global_info.getInDegree(17715) << " " << global_info.getOutDegree(17715) << endl;
 
     parallel_for(long i = 0; i < edge_additions.size; i++) { 
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
-
-      //frontier_curr[destination] = 1;
-      //frontier_curr[source] = 1;
-      //changed[source] = 1;
+      
+      //if (global_info.getOutDegree(source) != global_info_old.getOutDegree(source) && global_info_old.getInDegree(source) == 0 && global_info_old.getOutDegree(source) == 0) {
+        frontier_curr[source] = 1;
+        //changed[source] = 1;
+      //}
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
-        changed[v] = 1;
       });
     }
 
@@ -286,14 +291,10 @@ public:
       uintV destination = edge_deletions.E[i].destination;
 
       frontier_curr[destination] = 1;
-      changed[destination] = 1;
-      //frontier_curr[source] = 1;
-      //changed[source] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
-        changed[v] = 1;
       });
     }
 
@@ -348,7 +349,7 @@ public:
           VertexValueType new_value;
           computeFunction(u, aggregation_values[iter][u],
               vertex_values[iter - 1][u], new_value, global_info);
-          if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info)) || (notDelZero(vertex_values[iter - 1][u], vertex_values[iter][u], global_info_old))) {
+          if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info))) {
             vertex_values[iter][u] = new_value;
             frontier_next[u] = 1;
             intE outDegree = my_graph.V[u].getOutDegree();
@@ -357,13 +358,48 @@ public:
               frontier_next[v] = 1;
             });
             changed[u] = 1;
+          } else if ((notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
+              vertex_values[iter][u] = vertex_values[iter - 1][u];
+              frontier_next[u] = 1;
+              intE outDegree = my_graph.V[u].getOutDegree();
+              granular_for(i, 0, outDegree, (outDegree > 1024), {
+                uintV v = my_graph.V[u].getOutNeighbor(i);
+                frontier_next[v] = 1;
+              });
+              changed[u] = 1;
           } else {
             vertex_values[iter][u] = vertex_values[iter - 1][u];
           }
-        }
-        else if(changed[u]) {
+        } else if(changed[u]) {
           vertex_values[iter][u] = vertex_values[iter - 1][u];
+          aggregation_values[iter][u] = aggregation_values[iter - 1][u];
         }
+      }
+
+      parallel_for(long i = 0; i < edge_additions.size; i++) { 
+        uintV source = edge_additions.E[i].source;
+        uintV destination = edge_additions.E[i].destination;
+
+        //if (global_info.getOutDegree(source) != global_info_old.getOutDegree(source) && global_info_old.getInDegree(source) == 0 && global_info_old.getOutDegree(source) == 0) {
+          frontier_next[source] = 1;
+        //}
+        intE outDegree = my_graph.V[source].getOutDegree();
+        granular_for(i, 0, outDegree, (outDegree > 1024), {
+          uintV v = my_graph.V[source].getOutNeighbor(i);
+          frontier_next[v] = 1;
+        });
+      }
+
+      parallel_for(long i = 0; i < edge_deletions.size; i++) {
+        uintV source = edge_deletions.E[i].source;
+        uintV destination = edge_deletions.E[i].destination;
+
+        frontier_next[destination] = 1;
+        intE outDegree = my_graph.V[source].getOutDegree();
+        granular_for(i, 0, outDegree, (outDegree > 1024), {
+          uintV v = my_graph.V[source].getOutNeighbor(i);
+          frontier_next[v] = 1;
+        });
       }
 
       vertexSubset temp_vs(n, frontier_curr);
