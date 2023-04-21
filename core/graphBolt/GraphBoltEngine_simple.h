@@ -96,7 +96,8 @@ public:
           copy_time = 0;
         }
 
-        notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
+        long edges_to_process = sequence::plusReduceDegree(my_graph.V, frontier_curr_vs.d, (long)my_graph.n);
+        notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", edges_to_process = " << edges_to_process << ", ";
 
         // ========== COPY - Prepare curr iteration ==========
         if (iter > 0) {
@@ -115,7 +116,7 @@ public:
         adaptive_executor.updateEdgesProcessed(iter, my_graph,
                                                frontier_curr_vs); //更新迭代需要更新的边的个数
         misc_time = phase_timer.next();
-        adaptive_executor.updateMiscTime(iter, phase_timer.next());
+        adaptive_executor.updateMiscTime(iter, misc_time);
 
         // ========== EDGE COMPUTATION ========== 边计算
         if ((use_source_contribution) && (iter == 1)) {

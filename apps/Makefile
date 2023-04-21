@@ -26,7 +26,7 @@ GRAPH= ../core/graph/graph.h ../core/graph/graphUtils.h ../core/graph/IO.h ../co
 GRAPHBOLT=../core/graphBolt/AdaptiveExecutor.h ../core/graphBolt/GraphBoltEngine_complex.h ../core/graphBolt/GraphBoltEngine.h ../core/graphBolt/GraphBoltEngine_simple.h ../core/graphBolt/ingestor.h ../core/graphBolt/KickStarterEngine.h
 
 OTHERS=../core/main.h
-
+	
 ALL=PageRank LabelPropagation CF COEM SSSP BFS
 
 # make
