@@ -596,7 +596,7 @@ public:
   bool shouldSwitch(int iter, double dz_inc_iter_time) {
     if (iter > 0) {
       if (adaptive_executor.approximateTimeForCurrIter() < dz_inc_iter_time) {
-        return true;
+        return false;
       }
     }
     // Update approximate_time_for_prev_iteration for next iteration

@@ -22,6 +22,7 @@
 #ifndef __ADAPTIVE_EXECUTOR_H__
 #define __ADAPTIVE_EXECUTOR_H__
 
+#define notes_time_file "/home/wangcx/tmp/notes_time.txt"
 #include "../common/utils.h"
 #include "../graph/graph.h"
 #include "../graph/vertexSubset.h"
@@ -166,6 +167,20 @@ public:
     }
     edge_map_slope = sum_top / sum_bottom;
     edge_map_intercept = avg_edge_map_time - edge_map_slope * avg_active_edges;
+
+    ofstream notes_file;
+    notes_file.open(notes_time_file, ios::out | ios::app);
+    for (int i = 1; i <= converged_iteration; i++) { 
+      notes_file << active_edges[i] << " ";
+      notes_file << edge_map_time[i] << " ";
+      notes_file << vertex_map_time[i] << " ";
+      notes_file << copy_time[i] << " ";
+      notes_file << misc_time[i] << " ";
+      notes_file << endl;
+    }
+    notes_file << endl;
+    notes_file.close();
+    print();
   }
 
   void print() {

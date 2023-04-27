@@ -47,7 +47,7 @@ using namespace std;
 vector<int> debug_vertices = {624};
 #endif
 
-#define TIME_PRECISION 7
+#define TIME_PRECISION 13
 #define VAL_PRECISION 7
 #define VAL_PRECISION2 13
 #define PRINT_WIDTH 12

@@ -1,5 +1,5 @@
-FILE_NAME = Amazon0601
-BATCH_SIZE = 10000
+FILE_NAME = soc-LiveJournal1
+BATCH_SIZE = 100000
 BATCH_TIME = 10
 OUTPUT_STD = ~/tmp/output_std/pr_output
 OUTPUT     = ~/tmp/output1/pr_output
