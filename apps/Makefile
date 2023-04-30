@@ -15,7 +15,7 @@ CORE_LIST := $(shell seq -s, 26 $$(expr 25 + $(CORE_NUM) / 2)),$(shell seq -s, 7
 #compilers
 $(info ************  Using CILK ************)
 PCC = g++-7
-PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA) -Ddelta_calc
+PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA)
 LDFLAGS = -L../lib/mimalloc/out/release -lmimalloc 
 
 # dependencies
@@ -36,10 +36,36 @@ all: $(ALL)
 % : %.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
 
-.PHONY : clean
+PageRankDelta : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
+
+PageRankTrad : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
+
+PageRankAe :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
 
 clean :
 	rm -f *.o *.obj $(ALL)
 
 PageRankRun : PageRank
 	taskset -c $(CORE_LIST) ./PageRank -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+
+PageRankRuns : PageRankDelta PageRankAe PageRankTrad
+	@if test -e /home/wangcx/tmp/notes.txt ; \
+    then \
+        rm /home/wangcx/tmp/notes.txt ; \
+        echo "File deleted." ; \
+    else \
+        echo "File not found." ; \
+    fi
+	
+	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_2.txt 
+
+	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_trad_webgoogle_2.txt 
+
+	taskset -c $(CORE_LIST) ./PageRankAe -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_ae_webgoogle_2.txt 
+	echo "finish"

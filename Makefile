@@ -1,5 +1,5 @@
-FILE_NAME = soc-LiveJournal1
-BATCH_SIZE = 100000
+FILE_NAME = WebGoogle
+BATCH_SIZE = 10000
 BATCH_TIME = 10
 OUTPUT_STD = ~/tmp/output_std/pr_output
 OUTPUT     = ~/tmp/output1/pr_output
@@ -25,3 +25,6 @@ PageRank :
 
 PRCompare :
 	cd $(tools)/output_comparators && make PRCompare
+
+PageRankRuns :
+	cd $(apps) && make PageRankRuns

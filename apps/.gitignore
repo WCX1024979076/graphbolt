@@ -2,6 +2,9 @@
 /SSSP
 /LabelPropagation
 /PageRank
+/PageRankDelta
+/PageRankTrad
+/PageRankAe
 /CF
 /COEM
 /BFS
