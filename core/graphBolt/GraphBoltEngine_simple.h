@@ -24,9 +24,6 @@
 
 #include "GraphBoltEngine.h"
 
-#define notes_trad_file "/home/wangcx/tmp/notes_trad.txt"
-#define notes_delta_file "/home/wangcx/tmp/notes_delta.txt"
-
 // ======================================================================
 // GRAPHBOLTENGINESIMPLE
 // ======================================================================
@@ -45,7 +42,6 @@ public:
     use_source_contribution = true;
   }
 
-  ofstream notes_file;
   // ======================================================================
   // TEMPORARY STRUCTURES USED BY THE SIMPLE ENGINE 相关临时结构初始化
   // ======================================================================
@@ -74,11 +70,6 @@ public:
   // TODO : Currently, max_iterations = history_iterations.
   // Need to implement computation without history.
   int traditionalIncrementalComputation(int start_iteration) {
-#ifdef delta_calc
-    notes_file.open(notes_delta_file, ios::out | ios::app);
-#else
-    notes_file.open(notes_trad_file, ios::out | ios::app);
-#endif
     timer iteration_timer, phase_timer, single_calc_timer; //计时用
     double misc_time, copy_time, phase_time, iteration_time;
 
@@ -98,8 +89,8 @@ public:
           misc_time = 0;
           copy_time = 0;
         }
-
-        notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
+        log_to_file("tradtional iter = ", iter);
+        // notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
 
         // ========== COPY - Prepare curr iteration ==========
         if (iter > 0) {
@@ -227,7 +218,10 @@ public:
         misc_time += phase_timer.next();
         iteration_time = iteration_timer.stop();
 
-        notes_file << "calc_timer = " << single_calc_timer.next() << endl;
+        log_to_file(" timer = ", single_calc_timer.next());
+        log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
+        log_to_file("\n");
+        // notes_file << "calc_timer = " << single_calc_timer.next() << endl;
 
         if (ae_enabled && iter == 1) {
           adaptive_executor.setApproximateTimeForCurrIter(iteration_time); //为 CurrIter 设置大概时间
@@ -242,8 +236,7 @@ public:
     if (ae_enabled) {
       adaptive_executor.updateEquation(converged_iteration);
     }
-    notes_file << endl;
-    notes_file.close();
+    log_to_file("\n");
     return converged_iteration;
   }
 
@@ -254,6 +247,8 @@ public:
   // ======================================================================
   void tegraCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
     cout << "Tegra calc starter" << endl;
+    timer single_calc_timer; //计时用
+    single_calc_timer.start();
 
     n_old = n;
     if (edge_additions.maxVertex >= n) {
@@ -301,6 +296,8 @@ public:
         converged_iteration = performSwitch(iter);
         break;
       }
+      log_to_file("tegra iter = ", iter);
+
       parallel_for(uintV v = 0; v < n; v++) {
         if (frontier_curr[v]) {
           // check for propagate and retract for the vertices.
@@ -405,6 +402,9 @@ public:
         frontier_next[u] = 0;
       }
       
+      log_to_file(" timer = ", single_calc_timer.next());
+      log_to_file("\n");
+
       //cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
       if(temp_vs.isEmpty()) {
         if (iter == converged_iteration) {
@@ -424,6 +424,7 @@ public:
     }
     cout << "tegra calc end" << endl;
     printOutput();
+    log_to_file("\n");
     // for(int i = 0; i <= converged_iteration; i++)
     // {
     //   for(uintV u = 0; u < n; u++)
@@ -443,11 +444,6 @@ public:
   // DELTACOMPUTE 增量计算模型
   // ======================================================================
   void deltaCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
-#ifdef delta_calc
-    notes_file.open(notes_delta_file, ios::out | ios::app);
-#else
-    notes_file.open(notes_trad_file, ios::out | ios::app);
-#endif
     timer iteration_timer, phase_timer, full_timer, pre_compute_timer, single_calc_timer;
     double misc_time, copy_time, phase_time, iteration_time, pre_compute_time;
     iteration_time = 0;
@@ -611,13 +607,7 @@ public:
     for (int iter = 1; iter < max_iterations; iter++) {
       // Perform switch if needed
       if (should_switch_now) { //切换到传统增量计算模型?
-        notes_file.close();
         converged_iteration = performSwitch(iter);
-#ifdef delta_calc
-    notes_file.open(notes_delta_file, ios::out | ios::app);
-#else
-    notes_file.open(notes_trad_file, ios::out | ios::app);
-#endif
         break;
       }
 
@@ -644,16 +634,11 @@ public:
             vertex_value_old_next[v] = vertex_values[iter][v];
           }
         } else {
-          notes_file.close();
           converged_iteration = performSwitch(iter);
-          #ifdef delta_calc
-              notes_file.open(notes_delta_file, ios::out | ios::app);
-          #else
-              notes_file.open(notes_trad_file, ios::out | ios::app);
-          #endif          
           break;
         }
       }
+      log_to_file("delta iter = ", iter);
 
       //notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
       //cout << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << endl;
@@ -905,7 +890,8 @@ public:
 
       misc_time += phase_timer.next();
       iteration_time = iteration_timer.next();
-      notes_file << "calc_timer = " << single_calc_timer.next() << endl;
+      
+      // notes_file << "calc_timer = " << single_calc_timer.next() << endl;
       // Convergence check
       if (!has_direct_changes && frontier_curr_vs.isEmpty()) {
         // There are no more active vertices
@@ -927,6 +913,10 @@ public:
         iteration_time += pre_compute_time;
       }
 
+      log_to_file(" timer = ", iteration_time);
+      log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
+      log_to_file("\n");
+
       if (ae_enabled && shouldSwitch(iter, iteration_time)) {
         should_switch_now = true;
       }
@@ -936,9 +926,8 @@ public:
 
     cout << "Finished batch : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << converged_iteration << "\n";
-    notes_file << endl;
-    notes_file.close();
     // testPrint();
+    log_to_file("\n");
     printOutput();
   }
 

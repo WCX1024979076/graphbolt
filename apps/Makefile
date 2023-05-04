@@ -36,6 +36,18 @@ all: $(ALL)
 % : %.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
 
+PageRankDelta : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
+
+PageRankTrad : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
+
+PageRankAe :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
+
+PageRankTegra :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Dtegra_calc $< $(LDFLAGS) -o $@
+
 .PHONY : clean
 
 clean :
@@ -44,3 +56,20 @@ clean :
 PageRankRun : PageRank
 	# taskset -c $(CORE_LIST) 
 	./PageRank -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+
+PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
+	@if test -e /home/wangcx/tmp/notes.txt ; \
+    then \
+        rm /home/wangcx/tmp/notes.txt ; \
+        echo "File deleted." ; \
+    else \
+        echo "File not found." ; \
+    fi
+	for i in {3..5}; do \
+	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_$${i}.txt; \
+	taskset -c $(CORE_LIST) ./PageRankTegra -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_tegra_webgoogle_$${i}.txt; \
+	done
+
+	echo "finish"
