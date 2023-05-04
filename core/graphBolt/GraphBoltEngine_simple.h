@@ -248,7 +248,6 @@ public:
   void tegraCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
     cout << "Tegra calc starter" << endl;
     timer single_calc_timer; //计时用
-    single_calc_timer.start();
 
     n_old = n;
     if (edge_additions.maxVertex >= n) {
@@ -291,6 +290,7 @@ public:
     }
 
     for (int iter = 1; iter < max_iterations; iter++) {
+      single_calc_timer.start();
       if(iter >= converged_iteration)
       {
         converged_iteration = performSwitch(iter);

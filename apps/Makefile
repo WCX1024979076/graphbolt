@@ -15,7 +15,7 @@ CORE_LIST := $(shell seq -s, 26 $$(expr 25 + $(CORE_NUM) / 2)),$(shell seq -s, 7
 #compilers
 $(info ************  Using CILK ************)
 PCC = g++-7
-PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA) -Dtegra_calc
+PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA)
 LDFLAGS = -L../lib/mimalloc/out/release -lmimalloc 
 
 # dependencies
@@ -68,8 +68,10 @@ PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
 	for i in {3..5}; do \
 	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
 	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_$${i}.txt; \
-	taskset -c $(CORE_LIST) ./PageRankTegra -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	taskset -c $(CORE_LIST) ./PageRankTegra -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
 	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_tegra_webgoogle_$${i}.txt; \
+	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_trad_webgoogle_$${i}.txt; \
 	done
 
 	echo "finish"
