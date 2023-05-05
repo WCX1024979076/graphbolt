@@ -423,7 +423,7 @@ public:
       }
     }
     cout << "tegra calc end" << endl;
-    printOutput();
+    // printOutput();
     log_to_file("\n");
     // for(int i = 0; i <= converged_iteration; i++)
     // {
@@ -928,7 +928,7 @@ public:
     cout << "Number of iterations : " << converged_iteration << "\n";
     // testPrint();
     log_to_file("\n");
-    printOutput();
+    // printOutput();
   }
 
   // Refactor this in a better way
