@@ -61,11 +61,11 @@ PageRankRuns : PageRankDelta PageRankAe PageRankTrad
     fi
 	
 	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_2.txt 
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_7.txt 
 
 	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_trad_webgoogle_2.txt 
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_trad_webgoogle_7.txt 
 
 	taskset -c $(CORE_LIST) ./PageRankAe -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_ae_webgoogle_2.txt 
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_ae_webgoogle_7.txt 
 	echo "finish"
