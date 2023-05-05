@@ -80,9 +80,9 @@ int parallel_main(int argc, char *argv[]) {
     output_oefile.open(oeFile, ios::out);
     output_oefile << fixed;
     output_oefile << setprecision(VAL_PRECISION2);
-
+#ifndef NoPageRank
     CalcPangeRank(ingraph, G, 0, output_file_path);
-
+#endif
     for(int current_batch = 1; current_batch <= batchtime; current_batch++)
     {
         int add_num = 0, add_index = 0;
@@ -115,8 +115,9 @@ int parallel_main(int argc, char *argv[]) {
             output_oefile << "a" << "\t" << AE[i].u << "\t" << AE[i].v << "\n";
         for (uintV i = 0; i < del_num; i++)
             output_oefile << "d" << "\t" << DE[i].u << "\t" << DE[i].v << "\n";
-        
+#ifndef NoPageRank
         CalcPangeRank(ingraph, G, current_batch, output_file_path);
+#endif
     }
 
     output_obfile.close();
@@ -132,7 +133,7 @@ int parallel_main(int argc, char *argv[]) {
     return 0;
 }
 
-
+#ifndef NoPageRank
 void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path) {
     uintV ecnt = 0;
     uintV ncnt = 0;
@@ -191,3 +192,4 @@ void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_
     free(rb);
     return ;
 }
+#endif
