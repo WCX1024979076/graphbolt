@@ -58,20 +58,10 @@ PageRankRun : PageRank
 	./PageRank -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
 PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
-	@if test -e /home/wangcx/tmp/notes.txt ; \
-    then \
-        rm /home/wangcx/tmp/notes.txt ; \
-        echo "File deleted." ; \
-    else \
-        echo "File not found." ; \
-    fi
 	for i in {3..5}; do \
 	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_$${i}.txt; \
 	taskset -c $(CORE_LIST) ./PageRankTegra -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_tegra_webgoogle_$${i}.txt; \
 	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_trad_webgoogle_$${i}.txt; \
 	done
 
 	echo "finish"

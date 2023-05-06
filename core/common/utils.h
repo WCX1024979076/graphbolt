@@ -60,6 +60,7 @@ void log_to_file(Args... args)
     std::ofstream log_file(NOTES_FILE, std::ios_base::app);
     if (log_file.is_open())
     {
+        log_file << fixed << setprecision(10);
         ((log_file << args), ...);
         log_file.close();
     }

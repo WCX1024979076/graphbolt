@@ -5,6 +5,9 @@
 #include <cassert>
 #include <ctime>
 
+int* d_in; 
+int* d_out;
+
 void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path);
 
 void GetRand(bool* rdm, long nonZeros, int Bnums)
@@ -66,6 +69,8 @@ int parallel_main(int argc, char *argv[]) {
 
     cout << "G.nonZeros " << G.nonZeros << "\n";
     cout << "Bnums " << Bnums << "\n";
+    log_to_file("batch_rate = ", batchsize * 1.0 / Bnums);
+    log_to_file("\n");
 
     ofstream output_obfile;
     cout << "Printing to file : " << (string)obFile << "\n";
@@ -80,9 +85,7 @@ int parallel_main(int argc, char *argv[]) {
     output_oefile.open(oeFile, ios::out);
     output_oefile << fixed;
     output_oefile << setprecision(VAL_PRECISION2);
-#ifndef NoPageRank
     CalcPangeRank(ingraph, G, 0, output_file_path);
-#endif
     for(int current_batch = 1; current_batch <= batchtime; current_batch++)
     {
         int add_num = 0, add_index = 0;
@@ -108,21 +111,33 @@ int parallel_main(int argc, char *argv[]) {
                 add_index++;
             }
         }
+        CalcPangeRank(ingraph, G, current_batch, output_file_path);
         cout << "current_batch " << current_batch << "\t";
         cout << "addbatchsize " << add_num << "\t";
-        cout << "dltbatchsize " << del_num << "\n";
-        for (uintV i = 0; i < add_num; i++)
+        cout << "dltbatchsize " << del_num << "\t";
+        uint64_t d_sum = 0;
+        for (uintV i = 0; i < add_num; i++) {
             output_oefile << "a" << "\t" << AE[i].u << "\t" << AE[i].v << "\n";
-        for (uintV i = 0; i < del_num; i++)
+            d_sum += d_out[AE[i].u];
+        }
+        for (uintV i = 0; i < del_num; i++) {
             output_oefile << "d" << "\t" << DE[i].u << "\t" << DE[i].v << "\n";
-#ifndef NoPageRank
-        CalcPangeRank(ingraph, G, current_batch, output_file_path);
-#endif
+            d_sum += d_out[DE[i].u];
+        }
+        double d_avg = d_sum * 1.0 / (add_num + del_num);
+        cout << "degree_avg " << d_avg << "\n";
+
+        log_to_file("degree_avg = ", d_avg);
+        log_to_file("\n");
     }
 
     output_obfile.close();
     output_oefile.close();
     
+    if(d_in)
+        free(d_in);
+    if(d_out)
+        free(d_out);
     free(rdm);
     free(rdm1);
     free(ingraph);
@@ -133,7 +148,6 @@ int parallel_main(int argc, char *argv[]) {
     return 0;
 }
 
-#ifndef NoPageRank
 void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path) {
     uintV ecnt = 0;
     uintV ncnt = 0;
@@ -147,19 +161,26 @@ void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_
     }
 
 	double eps=0.1;
-    int* d_in   = newA(int, ncnt);
-    int* d_out  = newA(int, ncnt);
-    double* ra  = newA(double, ncnt);
-    double* rb  = newA(double, ncnt);
+    if(d_in)
+        free(d_in);
+    if(d_out)
+        free(d_out);
+    d_in  = newA(int, ncnt);
+    d_out = newA(int, ncnt);
     for(int i = 0; i < ncnt; i++) {
-		ra[i] = 1;
-        rb[i] = 0;
         d_in[i] = 0;
         d_out[i] = 0;
     }
     for(int i = 0; i < ecnt; i++) {
         d_out[BE[i].u] ++;
         d_in[BE[i].v] ++;
+    }
+#ifndef NoPageRank
+    double* ra  = newA(double, ncnt);
+    double* rb  = newA(double, ncnt);
+    for(int i = 0; i < ncnt; i++) {
+		ra[i] = 1;
+        rb[i] = 0;
     }
 	while(eps > 0.0000001)//set ε=10^(-7), control the number of iterations
 	{
@@ -185,11 +206,8 @@ void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_
         output_file << ra[i] << "\n";
     }
     output_file.close();
-
-    free(d_in);
-    free(d_out);
     free(ra);
     free(rb);
+#endif
     return ;
 }
-#endif

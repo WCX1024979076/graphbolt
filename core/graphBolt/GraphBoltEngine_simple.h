@@ -91,7 +91,7 @@ public:
         }
 
         long edges_to_process = sequence::plusReduceDegree(my_graph.V, frontier_curr_vs.d, (long)my_graph.n);
-        log_to_file("tradtional iter = ", iter);
+        // log_to_file("tradtional iter = ", iter);
         // notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", edges_to_process = " << edges_to_process << ", ";
 
         adaptive_executor.updateApproximateTimeForEdges(edges_to_process);
@@ -222,9 +222,11 @@ public:
         misc_time += phase_timer.next();
         iteration_time = iteration_timer.stop();
         double single_time = single_calc_timer.next();
-        log_to_file(" timer = ", single_time);
-        log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
-        log_to_file("\n");
+
+        log_to_file(single_time, " ");
+        // log_to_file(" timer = ", single_time);
+        // log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
+        // log_to_file("\n");
         // notes_file << "calc_timer = " << single_time << endl;
         // notes_time << single_time << " " << adaptive_executor.approximateTimeForCurrIter() << endl;
 
@@ -301,7 +303,7 @@ public:
         converged_iteration = performSwitch(iter);
         break;
       }
-      log_to_file("tegra iter = ", iter);
+      // log_to_file("tegra iter = ", iter);
 
       parallel_for(uintV v = 0; v < n; v++) {
         if (frontier_curr[v]) {
@@ -407,8 +409,9 @@ public:
         frontier_next[u] = 0;
       }
       
-      log_to_file(" timer = ", single_calc_timer.next());
-      log_to_file("\n");
+      log_to_file(single_calc_timer.next(), " ");
+      // log_to_file(" timer = ", single_calc_timer.next());
+      // log_to_file("\n");
 
       //cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
       if(temp_vs.isEmpty()) {
@@ -643,7 +646,7 @@ public:
           break;
         }
       }
-      log_to_file("delta iter = ", iter);
+      // log_to_file("delta iter = ", iter);
 
       // notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
       copy_time += phase_timer.next();
@@ -916,9 +919,10 @@ public:
         iteration_time += pre_compute_time;
       }
 
-      log_to_file(" timer = ", iteration_time);
-      log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
-      log_to_file("\n");
+      log_to_file(iteration_time, " ");
+      // log_to_file(" timer = ", iteration_time);
+      // log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
+      // log_to_file("\n");
       // notes_time << iteration_time << " " << adaptive_executor.approximateTimeForCurrIter() << endl;
  
       if (ae_enabled && shouldSwitch(iter, iteration_time)) {
@@ -928,7 +932,6 @@ public:
       iteration_time += iteration_timer.stop();
     }
 
-    log_to_file("\n");
     cout << "Finished batch : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << converged_iteration << "\n";
     // testPrint();

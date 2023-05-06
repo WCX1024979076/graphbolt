@@ -540,6 +540,7 @@ public:
   // RUN AND INITIAL COMPUTE
   // ======================================================================
   void run() {
+    log_to_file("initial calc start\n");
     initialCompute();
 
     // ======================================================================
@@ -554,10 +555,13 @@ public:
       // to the graph datastructure. Now, refine using it.
 
 #ifdef delta_calc
+      log_to_file("graphbolt calc start\n");
       deltaCompute(edge_additions, edge_deletions);
 #elif defined(tegra_calc)
+      log_to_file("tegra calc start\n");
       tegraCompute(edge_additions, edge_deletions);
-#else 
+#else
+      log_to_file("trad calc start\n");
       initialCompute();
 #endif
 
