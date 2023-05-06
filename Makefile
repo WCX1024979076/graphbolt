@@ -7,7 +7,6 @@ SNAP_EDGE_NUM = 1000000
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE = 0.7
 
-SNAP_FILE = $(PWD)/inputs/$(FILE_NAME).snap
 OUTPUT_STD = ~/tmp/output_std/pr_output
 OUTPUT     = ~/tmp/output1/pr_output
 DIFF			 = ~/tmp/diff/pr_output
@@ -19,7 +18,7 @@ apps = $(PWD)/apps
 
 .PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns
 
-export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_FILE SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE
+export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE
 
 Generator :
 	cd $(tools)/updateGenerator && make run
