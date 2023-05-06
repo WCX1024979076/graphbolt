@@ -4,210 +4,69 @@
 #include "../../core/common/utils.h"
 #include <cassert>
 #include <ctime>
+#define ITER_NUM 50
+char name[100];
 
-int* d_in; 
-int* d_out;
-
-void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path);
-
-void GetRand(bool* rdm, long nonZeros, int Bnums)
+double *read_data()
 {
-    for(int i = 0; i < nonZeros; i++) {
-        rdm[i] = false;
-    }
-    int i = 0;
-    while(i < Bnums) {
-        int random = rand() % nonZeros;
-        if (rdm[random] == false) {
-            rdm[random] = true;
-            i++;
-        }
-    }
+    double *data = newA(double, ITER_NUM);
+    for (int i = 0; i < ITER_NUM; i++)
+        scanf("%lf", &data[i]);
+    return data;
 }
-int parallel_main(int argc, char *argv[]) {
-    unsigned int seed = time(nullptr);
-    srand(seed);
-    
-    commandLine P(argc, argv, "[-s] <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <addrate> <batchsize> <batchtime> <output_pagerank>");
-    char *iFile = P.getArgument(7);
-    char *obFile = P.getArgument(6);
-    char *oeFile = P.getArgument(5);
-    double baserate = strtod(P.getArgument(4), NULL);
-    double addrate = strtod(P.getArgument(3), NULL);
-    int batchsize = atol(P.getArgument(2));
-    int batchtime = atol(P.getArgument(1));
-    char *output_file_path = P.getArgument(0);
-    
-    cout << "Reading graph and creating base SNAP file and edgeOperations File\n";
-    edgeArray G = readSNAP(iFile);
 
-    //TODO：从图文件中抽取a%的边作为基础图  
-    int Bnums = int(G.nonZeros * baserate);
-    int Anums = int(batchsize * addrate);
-    bool *rdm = newA(bool, G.nonZeros);
-    bool *rdm1 = newA(bool, G.nonZeros);
-    bool *ingraph = newA(bool, G.nonZeros);
-    edge *BE = newA(edge, G.nonZeros);
-    edge *AE = newA(edge, G.nonZeros);
-    edge *DE = newA(edge, G.nonZeros);
-    int ingraph_num = 0;
+double *get_avg(double *data[3])
+{
+    double *data_avg = newA(double, ITER_NUM);
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < ITER_NUM; j++)
+            data_avg[i] += data[i][j];
+    for (int i = 0; i < ITER_NUM; i++)
+        data_avg[i] /= 3.0;
+    return data_avg;
+}
 
-    GetRand(rdm, G.nonZeros, Bnums);
+int parallel_main(int argc, char *argv[])
+{
+    FILE *fp = freopen(NOTES_FILE, "r", stdin);
+    double batch_rate, degree_avg;
+    long long batch_size, batch_time;
 
-    int basic_num = 0;
-    int add_num = 0;
-    int del_num = 0;
-    for(int i = 0; i < G.nonZeros; i++) {
-        if(rdm[i]) {
-            BE[basic_num++] = G.E[i];
-            ingraph[i] = true;
-            ingraph_num++;
-        } else {
-            ingraph[i] = false;
-        }
-    }
-
-    cout << "G.nonZeros " << G.nonZeros << "\n";
-    cout << "Bnums " << Bnums << "\n";
-    log_to_file("batch_rate = ", batchsize * 1.0 / Bnums);
-    log_to_file("\n");
-
-    ofstream output_obfile;
-    cout << "Printing to file : " << (string)obFile << "\n";
-    output_obfile.open(obFile, ios::out);
-    output_obfile << fixed;
-    output_obfile << setprecision(VAL_PRECISION2);
-    for (uintV i = 0; i < basic_num; i++)
-        output_obfile << BE[i].u << "\t" << BE[i].v << "\n";
-    
-    ofstream output_oefile;
-    cout << "Printing to file : " << (string)oeFile << "\n";
-    output_oefile.open(oeFile, ios::out);
-    output_oefile << fixed;
-    output_oefile << setprecision(VAL_PRECISION2);
-    CalcPangeRank(ingraph, G, 0, output_file_path);
-    for(int current_batch = 1; current_batch <= batchtime; current_batch++)
+    scanf("batch_rate = %lf", &batch_rate);
+    scanf("batch_size = %lf", &batch_size);
+    scanf("batch_time = %lf", &batch_time);
+    scanf("degree_avg = %lf", &degree_avg);
+    double *graphbolt_data[3], *tegra_data[3], *trad_data[3];
+    double *initial_data[9];
+    for (int i = 0; i < 3; i++)
     {
-        int add_num = 0, add_index = 0;
-        int del_num = 0, del_index = 0;
-        assert(G.nonZeros - ingraph_num >= Anums);
-        assert(ingraph_num >= batchsize - Anums);
-        GetRand(rdm, G.nonZeros - ingraph_num, Anums);
-        GetRand(rdm1, ingraph_num, batchsize - Anums);
-        for(int i = 0; i < G.nonZeros; i++) {
-            if(ingraph[i]) {
-                if(rdm1[del_index]) {
-                    ingraph[i] = false;
-                    DE[del_num++] = G.E[i];
-                    ingraph_num--;
-                }
-                del_index++;
-            } else {
-                if(rdm[add_index]) {
-                    ingraph[i] = true;
-                    AE[add_num++] = G.E[i];
-                    ingraph_num++;
-                }
-                add_index++;
-            }
-        }
-        CalcPangeRank(ingraph, G, current_batch, output_file_path);
-        cout << "current_batch " << current_batch << "\t";
-        cout << "addbatchsize " << add_num << "\t";
-        cout << "dltbatchsize " << del_num << "\t";
-        uint64_t d_sum = 0;
-        for (uintV i = 0; i < add_num; i++) {
-            output_oefile << "a" << "\t" << AE[i].u << "\t" << AE[i].v << "\n";
-            d_sum += d_out[AE[i].u];
-        }
-        for (uintV i = 0; i < del_num; i++) {
-            output_oefile << "d" << "\t" << DE[i].u << "\t" << DE[i].v << "\n";
-            d_sum += d_out[DE[i].u];
-        }
-        double d_avg = d_sum * 1.0 / (add_num + del_num);
-        cout << "degree_avg " << d_avg << "\n";
+        scanf("%s", name);
+        initial_data[i * 3] = read_data();
+        graphbolt_data[i] = read_data();
 
-        log_to_file("degree_avg = ", d_avg);
-        log_to_file("\n");
+        scanf("%s", name);
+        initial_data[i * 3 + 1] = read_data();
+        tegra_data[i] = read_data();
+
+        scanf("%s", name);
+        initial_data[i * 3 + 2] = read_data();
+        trad_data[i] = read_data();
     }
+    double *graphbolt_data_avg = get_avg(graphbolt_data);
+    double *tegra_data_avg = get_avg(tegra_data);
+    double *trad_data_avg = get_avg(trad_data);
 
-    output_obfile.close();
-    output_oefile.close();
-    
-    if(d_in)
-        free(d_in);
-    if(d_out)
-        free(d_out);
-    free(rdm);
-    free(rdm1);
-    free(ingraph);
-    free(BE);
-    free(AE);
-    free(DE);
-
+    for (int i = 0; i < 9; i++)
+        free(initial_data[i]);
+    for (int i = 0; i < 3; i++)
+    {
+        free(graphbolt_data[i]);
+        free(tegra_data[i]);
+        free(trad_data[i]);
+    }
+    free(graphbolt_data_avg);
+    free(tegra_data_avg);
+    free(trad_data_avg);
+    fclose(fp);
     return 0;
-}
-
-void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_file_path) {
-    uintV ecnt = 0;
-    uintV ncnt = 0;
-    edge *BE = newA(edge, G.nonZeros);
-    for(int i = 0; i < G.nonZeros; i++) {
-        if(ingraph[i]) {
-            BE[ecnt++] = G.E[i];
-            ncnt = max(ncnt, G.E[i].u + 1);
-            ncnt = max(ncnt, G.E[i].v + 1);
-        }
-    }
-
-	double eps=0.1;
-    if(d_in)
-        free(d_in);
-    if(d_out)
-        free(d_out);
-    d_in  = newA(int, ncnt);
-    d_out = newA(int, ncnt);
-    for(int i = 0; i < ncnt; i++) {
-        d_in[i] = 0;
-        d_out[i] = 0;
-    }
-    for(int i = 0; i < ecnt; i++) {
-        d_out[BE[i].u] ++;
-        d_in[BE[i].v] ++;
-    }
-#ifndef NoPageRank
-    double* ra  = newA(double, ncnt);
-    double* rb  = newA(double, ncnt);
-    for(int i = 0; i < ncnt; i++) {
-		ra[i] = 1;
-        rb[i] = 0;
-    }
-	while(eps > 0.0000001)//set ε=10^(-7), control the number of iterations
-	{
-        eps = 0;
-		for(int i = 0;i < ecnt; i++) {
-			rb[BE[i].v] += ra[BE[i].u] / d_out[BE[i].u]; //first step to initialize the rank value
-        }
-		for(int i = 0;i < ncnt; i++) {
-			rb[i] = rb[i] * 0.85 + 0.15; //add the random jumping coefficient β, and set β=0.8
-			eps += ra[i] > rb[i] ? (ra[i] - rb[i]) : (rb[i] - ra[i]);//compute the Difference between the old rank value and new rank value, and update the ε
-			ra[i] = rb[i];
-			rb[i] = 0;
-		}
-	}
-    string curr_output_file_path = output_file_path + to_string(current_batch);
-    std::cout << "Printing to file : " << curr_output_file_path << "\n";
-    ofstream output_file;
-    output_file.open(curr_output_file_path, ios::out);
-    output_file << fixed;
-    output_file << setprecision(VAL_PRECISION2);
-    for (int i = 0; i < ncnt; i++) {
-        output_file << i << " " << d_in[i] << " " << d_out[i] << " ";
-        output_file << ra[i] << "\n";
-    }
-    output_file.close();
-    free(ra);
-    free(rb);
-#endif
-    return ;
 }

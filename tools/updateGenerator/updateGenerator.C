@@ -71,7 +71,10 @@ int parallel_main(int argc, char *argv[]) {
     cout << "Bnums " << Bnums << "\n";
     log_to_file("batch_rate = ", batchsize * 1.0 / Bnums);
     log_to_file("\n");
-
+    log_to_file("batch_size = ", batchsize);
+    log_to_file("\n");
+    log_to_file("batch_time = ", batchtime);
+    log_to_file("\n");
     ofstream output_obfile;
     cout << "Printing to file : " << (string)obFile << "\n";
     output_obfile.open(obFile, ios::out);
