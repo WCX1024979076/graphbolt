@@ -645,8 +645,6 @@ public:
       }
       log_to_file("delta iter = ", iter);
 
-      log_to_file("delta iter = ", iter);
-
       // notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
       copy_time += phase_timer.next();
       // ========== EDGE COMPUTATION - aggregation_values ========== 计算新的权值贡献
