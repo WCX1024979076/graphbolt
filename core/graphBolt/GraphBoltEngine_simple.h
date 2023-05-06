@@ -245,6 +245,206 @@ public:
     return converged_iteration;
   }
 
+#define COMMA ,
+
+  // ======================================================================
+  // Tegra 增量计算模型
+  // ======================================================================
+  void tegraCompute(edgeArray &edge_additions, edgeArray &edge_deletions) {
+    cout << "Tegra calc starter" << endl;
+    timer single_calc_timer; //计时用
+
+    n_old = n;
+    if (edge_additions.maxVertex >= n) {
+      processVertexAddition(edge_additions.maxVertex);
+    }
+    
+    // Reset values before incremental computation
+    parallel_for(uintV v = 0; v < n; v++) {
+      frontier_curr[v] = 0;
+      frontier_next[v] = 0;
+      changed[v] = 0;
+      source_change_in_contribution[v] = aggregationValueIdentity<AggregationValueType>();
+    }
+
+    global_info_old.copy(global_info);
+    global_info.processUpdates(edge_additions, edge_deletions);
+
+    parallel_for(long i = 0; i < edge_additions.size; i++) { 
+      uintV source = edge_additions.E[i].source;
+      uintV destination = edge_additions.E[i].destination;
+      
+      frontier_curr[source] = 1;
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr[v] = 1;
+      });
+    }
+
+    parallel_for(long i = 0; i < edge_deletions.size; i++) {
+      uintV source = edge_deletions.E[i].source;
+      uintV destination = edge_deletions.E[i].destination;
+
+      frontier_curr[destination] = 1;
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr[v] = 1;
+      });
+    }
+
+    for (int iter = 1; iter < max_iterations; iter++) {
+      single_calc_timer.start();
+      if(iter >= converged_iteration)
+      {
+        converged_iteration = performSwitch(iter);
+        break;
+      }
+      log_to_file("tegra iter = ", iter);
+
+      parallel_for(uintV v = 0; v < n; v++) {
+        if (frontier_curr[v]) {
+          // check for propagate and retract for the vertices.
+          intE inDegree = my_graph.V[v].getInDegree();
+          aggregation_values[iter][v] = vertexValueIdentity<VertexValueType>();
+          
+          granular_for(i, 0, inDegree, (inDegree > 1024), {
+            uintV u = my_graph.V[v].getInNeighbor(i);
+            AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
+            sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
+                u, contrib_change, vertexValueIdentity<VertexValueType>(),
+                vertex_values[iter - 1][u], global_info);
+
+// Do repropagate for edge source->destination.
+#ifdef EDGEDATA
+        EdgeData *edge_data = edge_additions.E[i].edgeData;
+#else
+        EdgeData *edge_data = &emptyEdgeData;
+#endif
+
+            bool ret = edgeFunction(u, v, *edge_data, vertex_values[iter - 1][u],
+                               contrib_change, global_info);
+
+            if (ret) {
+              if (use_lock) {
+                vertex_locks[v].writeLock();
+                if (ret) {
+                  addToAggregation(contrib_change, aggregation_values[iter][v], global_info);
+                }
+                vertex_locks[v].unlock();
+              } else {
+                if (ret) {
+                  addToAggregationAtomic(contrib_change, aggregation_values[iter][v] , global_info);
+                }
+              }
+            } 
+          });
+        }
+      }
+
+      parallel_for(uintV u = 0; u < n; u++) { 
+        if(frontier_curr[u]) {
+          VertexValueType new_value;
+          computeFunction(u, aggregation_values[iter][u],
+              vertex_values[iter - 1][u], new_value, global_info);
+          if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info))) {
+            vertex_values[iter][u] = new_value;
+            frontier_next[u] = 1;
+            intE outDegree = my_graph.V[u].getOutDegree();
+            granular_for(i, 0, outDegree, (outDegree > 1024), {
+              uintV v = my_graph.V[u].getOutNeighbor(i);
+              frontier_next[v] = 1;
+            });
+            changed[u] = 1;
+          } else if ((notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
+              vertex_values[iter][u] = vertex_values[iter - 1][u];
+              aggregation_values[iter][u] = aggregation_values[iter - 1][u];
+              frontier_next[u] = 1;
+              intE outDegree = my_graph.V[u].getOutDegree();
+              granular_for(i, 0, outDegree, (outDegree > 1024), {
+                uintV v = my_graph.V[u].getOutNeighbor(i);
+                frontier_next[v] = 1;
+              });
+              changed[u] = 1;
+          } else {
+            vertex_values[iter][u] = vertex_values[iter - 1][u];
+            aggregation_values[iter][u] = aggregation_values[iter - 1][u];
+          }
+        } else if(changed[u]) {
+          vertex_values[iter][u] = vertex_values[iter - 1][u];
+          aggregation_values[iter][u] = aggregation_values[iter - 1][u];
+        }
+      }
+
+      parallel_for(long i = 0; i < edge_additions.size; i++) { 
+        uintV source = edge_additions.E[i].source;
+        uintV destination = edge_additions.E[i].destination;
+
+        frontier_next[source] = 1;
+        intE outDegree = my_graph.V[source].getOutDegree();
+        granular_for(i, 0, outDegree, (outDegree > 1024), {
+          uintV v = my_graph.V[source].getOutNeighbor(i);
+          frontier_next[v] = 1;
+        });
+      }
+
+      parallel_for(long i = 0; i < edge_deletions.size; i++) {
+        uintV source = edge_deletions.E[i].source;
+        uintV destination = edge_deletions.E[i].destination;
+
+        frontier_next[destination] = 1;
+        intE outDegree = my_graph.V[source].getOutDegree();
+        granular_for(i, 0, outDegree, (outDegree > 1024), {
+          uintV v = my_graph.V[source].getOutNeighbor(i);
+          frontier_next[v] = 1;
+        });
+      }
+
+      vertexSubset temp_vs(n, frontier_curr);
+      parallel_for(uintV u = 0; u < n; u++) {
+        frontier_curr[u] = frontier_next[u];
+        frontier_next[u] = 0;
+      }
+      
+      log_to_file(" timer = ", single_calc_timer.next());
+      log_to_file("\n");
+
+      //cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
+      if(temp_vs.isEmpty()) {
+        if (iter == converged_iteration) {
+          break;
+        } else if (iter > converged_iteration) {
+          assert(("Missed switching to Traditional incremental computing when "
+                  "iter == converged_iter",
+                  false));
+        } else {
+          // Values stable for the changed vertices at this iteration.
+          // But, the changed vertices might receive new changes. So,
+          // continue loop until iter == converged_iteration vertices may
+          // still not have converged. So, keep continuing until
+          // converged_iteration is reached.
+        }
+      }
+    }
+    cout << "tegra calc end" << endl;
+    // printOutput();
+    log_to_file("\n");
+    // for(int i = 0; i <= converged_iteration; i++)
+    // {
+    //   for(uintV u = 0; u < n; u++)
+    //   {
+    //     cout << vertex_values[i][u] << " ";
+    //   }
+    //   cout << endl;
+    // }
+    // for(uintV u = 0; u < n; u++) 
+    // {
+    //   cout << "u:" << u <<endl;
+    //   printHistory(u, aggregation_values, vertex_values, global_info, max_iterations);
+    // }
+  }
+
   // ======================================================================
   // DELTACOMPUTE 增量计算模型
   // ======================================================================
@@ -443,6 +643,7 @@ public:
           break;
         }
       }
+      log_to_file("delta iter = ", iter);
 
       log_to_file("delta iter = ", iter);
 
@@ -733,7 +934,8 @@ public:
     cout << "Finished batch : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << converged_iteration << "\n";
     // testPrint();
-    printOutput();
+    log_to_file("\n");
+    // printOutput();
   }
 
   // Refactor this in a better way

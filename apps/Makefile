@@ -45,13 +45,19 @@ PageRankTrad : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 PageRankAe :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
 
+PageRankTegra :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Dtegra_calc $< $(LDFLAGS) -o $@
+
+.PHONY : clean
+
 clean :
 	rm -f *.o *.obj $(ALL)
 
 PageRankRun : PageRank
-	taskset -c $(CORE_LIST) ./PageRank -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	# taskset -c $(CORE_LIST) 
+	./PageRank -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
-PageRankRuns : PageRankDelta PageRankAe PageRankTrad
+PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
 	@if test -e /home/wangcx/tmp/notes.txt ; \
     then \
         rm /home/wangcx/tmp/notes.txt ; \
@@ -59,13 +65,13 @@ PageRankRuns : PageRankDelta PageRankAe PageRankTrad
     else \
         echo "File not found." ; \
     fi
-	
-	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_7.txt 
+	for i in {3..5}; do \
+	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_delta_webgoogle_$${i}.txt; \
+	taskset -c $(CORE_LIST) ./PageRankTegra -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_tegra_webgoogle_$${i}.txt; \
+	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_trad_webgoogle_$${i}.txt; \
+	done
 
-	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_trad_webgoogle_7.txt 
-
-	taskset -c $(CORE_LIST) ./PageRankAe -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
-	mv /home/wangcx/tmp/notes.txt /home/wangcx/tmp/note_ae_webgoogle_7.txt 
 	echo "finish"

@@ -35,3 +35,4 @@ PageRankRuns :
 
 RMAT_Generator:
 	cd $(tools)/PaRMAT/Release && make RMAT_Generator
+
