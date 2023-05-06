@@ -26,30 +26,43 @@ double *get_avg(double *data[3])
     return data_avg;
 }
 
+void read_name()
+{
+    while(1)
+    {
+        scanf("%s", name);
+        if(strlen(name) > 3)
+            break;
+    }
+}
+
 int parallel_main(int argc, char *argv[])
 {
     FILE *fp = freopen(NOTES_FILE, "r", stdin);
     double batch_rate, degree_avg;
     long long batch_size, batch_time;
 
-    scanf("batch_rate = %lf", &batch_rate);
-    scanf("batch_size = %lf", &batch_size);
-    scanf("batch_time = %lf", &batch_time);
-    scanf("degree_avg = %lf", &degree_avg);
-    double *graphbolt_data[3], *tegra_data[3], *trad_data[3];
+    scanf("batch_rate = %lf\n", &batch_rate);
+    scanf("batch_size = %lld\n", &batch_size);
+    scanf("batch_time = %lld\n", &batch_time);
+    scanf("degree_avg = %lf\n", &degree_avg);
+    double *graphbolt_data[3], *tegra_data[3], *trad_data[3]; 
     double *initial_data[9];
     for (int i = 0; i < 3; i++)
     {
-        scanf("%s", name);
+        read_name();
         initial_data[i * 3] = read_data();
+        read_name();
         graphbolt_data[i] = read_data();
 
-        scanf("%s", name);
+        read_name();
         initial_data[i * 3 + 1] = read_data();
+        read_name();
         tegra_data[i] = read_data();
 
-        scanf("%s", name);
+        read_name();
         initial_data[i * 3 + 2] = read_data();
+        read_name();
         trad_data[i] = read_data();
     }
     double *graphbolt_data_avg = get_avg(graphbolt_data);

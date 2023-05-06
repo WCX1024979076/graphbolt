@@ -13,7 +13,7 @@ LOCAL_COMMON = ../common/graphIO.h ../common/fileUtils.h
 
 CONVERTERS = updateGenerator
 
-.PHONY: all clean
+.PHONY: all clean run
 
 all: $(CONVERTERS)
 
