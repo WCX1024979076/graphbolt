@@ -39,6 +39,9 @@ PageRankRuns :
 RMAT_Generator:
 	cd $(tools)/PaRMAT/Release && make RMAT_Generator
 
+ANALYSIS:
+	cd $(tools)/analysis && make run
+
 DEL_NOTES_TXT:
 	@if test -e /home/wangcx/tmp/notes.txt ; \
     then \
