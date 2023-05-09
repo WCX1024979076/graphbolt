@@ -221,9 +221,8 @@ public:
         frontier_curr_vs = temp_vs;
         misc_time += phase_timer.next();
         iteration_time = iteration_timer.stop();
-        double single_time = single_calc_timer.next();
 
-        log_to_file(single_time, " ");
+        log_to_file(single_calc_timer.next(), " ");
         // log_to_file(" timer = ", single_time);
         // log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
         // log_to_file("\n");
@@ -919,7 +918,7 @@ public:
         iteration_time += pre_compute_time;
       }
 
-      log_to_file(iteration_time, " ");
+      log_to_file(single_calc_timer.next(), " ");
       // log_to_file(" timer = ", iteration_time);
       // log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
       // log_to_file("\n");

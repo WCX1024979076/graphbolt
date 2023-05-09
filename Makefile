@@ -16,7 +16,7 @@ tools = $(PWD)/tools
 inputs = $(PWD)/inputs
 apps = $(PWD)/apps
 
-.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns
+.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS
 
 export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE
 
@@ -50,5 +50,10 @@ DEL_NOTES_TXT:
         echo "File not found." ; \
     fi
 
-RunAll: RMAT_Generator Generator Snap2Adj PageRankRuns
+RunAll: RMAT_Generator Generator Snap2Adj PageRankRuns ANALYSIS
 	echo "finish"
+
+RunPy:
+	for i in {1..50}; do \
+		python3 run.py; \
+	done
