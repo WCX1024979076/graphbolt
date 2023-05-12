@@ -84,7 +84,7 @@ int parallel_main(int argc, char *argv[])
     }
     std::cout << "n1 = " << n1 << "; n2 = " << n2 << std::endl;
     
-    FILE *fp1 = freopen("/home/wangcx/tmp/notes2.txt", "a", stdout);
+    FILE *fp1 = freopen("/home/wangcx/tmp/notes3.txt", "a", stdout);
     printf("BATCH_SIZE = %lld\n", batch_size);
     printf("SNAP_VERTEX_NUM = %lld\n", snap_vertex_num);
     printf("SNAP_EDGE_NUM = %lld\n", snap_edge_num);
