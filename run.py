@@ -2,17 +2,21 @@ import random
 import os
 
 BATCH_SIZE = 100000
-SNAP_VERTEX_NUM = 10000
-SNAP_EDGE_NUM = 1000000
+SNAP_VERTEX_NUM = 875713
+SNAP_EDGE_NUM = 5105039
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE = 0.7
 
 while 1:
-  BATCH_ADD_RATE = random.random()
   BASE_GRAPH_RATE = random.random()
+  BATCH_ADD_RATE = random.random()
   SNAP_VERTEX_NUM = random.randint(1500, 100000)
   BATCH_SIZE = random.randint(1, 1000000)
+  BATCH_RATE = BATCH_SIZE / (BASE_GRAPH_RATE * SNAP_EDGE_NUM)
 
+  if BATCH_RATE > 0.05 :
+    continue
+  
   if int(SNAP_EDGE_NUM * BASE_GRAPH_RATE) + int(BATCH_SIZE * BATCH_ADD_RATE) > SNAP_EDGE_NUM :
     continue
   

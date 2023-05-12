@@ -79,12 +79,12 @@ int parallel_main(int argc, char *argv[])
     {
         if(trad_data_avg[i] < graphbolt_data_avg[i] && n1 == -1)
             n1 = i;
-        if((abs(graphbolt_data_avg[i] - tegra_data_avg[i]) < 0.1) && n2 == -1)
+        if(tegra_data_avg[i] < graphbolt_data_avg[i] && n2 == -1)
             n2 = i;
     }
     std::cout << "n1 = " << n1 << "; n2 = " << n2 << std::endl;
     
-    FILE *fp1 = freopen("/home/wangcx/tmp/notes1.txt", "a", stdout);
+    FILE *fp1 = freopen("/home/wangcx/tmp/notes2.txt", "a", stdout);
     printf("BATCH_SIZE = %lld\n", batch_size);
     printf("SNAP_VERTEX_NUM = %lld\n", snap_vertex_num);
     printf("SNAP_EDGE_NUM = %lld\n", snap_edge_num);

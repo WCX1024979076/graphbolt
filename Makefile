@@ -9,7 +9,7 @@ BATCH_ADD_RATE = 0.7
 
 OUTPUT_STD = ~/tmp/output_std/pr_output
 OUTPUT     = ~/tmp/output1/pr_output
-DIFF			 = ~/tmp/diff/pr_output
+DIFF       = ~/tmp/diff/pr_output
 CORE_NUM   = 4
 
 tools = $(PWD)/tools
@@ -54,6 +54,6 @@ RunAll: RMAT_Generator Generator Snap2Adj PageRankRuns ANALYSIS
 	echo "finish"
 
 RunPy:
-	for i in {1..50}; do \
+	for i in {1..10}; do \
 		python3 run.py; \
 	done
