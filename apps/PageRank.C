@@ -288,6 +288,7 @@ void printAdditionalData(ofstream &output_file, const uintV &v,
 template <class vertex> void compute(graph<vertex> &G, commandLine config) { //计算函数
   uintV n = G.n;
   int max_iters = config.getOptionLongValue("-maxIters", 50);
+  int graphbolt_iters = config.getOptionLongValue("-graphboltIters", 50);
   double epsilon = config.getOptionDoubleValue("-epsilon", 0.0000001d);
   max_iters += 1;
   double damping = 0.85;
