@@ -52,7 +52,7 @@ int parallel_main(int argc, char *argv[])
     scanf("batch_size = %lld\n", &batch_size);
     scanf("batch_time = %lld\n", &batch_time);
 
-    FILE *fp1 = freopen("/home/wangcx/tmp/notes5.txt", "a", stdout);
+    FILE *fp1 = freopen("/home/wangcx/tmp/notes6.txt", "a", stdout);
     printf("BATCH_SIZE = %lld\n", batch_size);
     printf("SNAP_VERTEX_NUM = %lld\n", snap_vertex_num);
     printf("SNAP_EDGE_NUM = %lld\n", snap_edge_num);
@@ -99,16 +99,52 @@ int parallel_main(int argc, char *argv[])
         graphbolt_data_avg[j] = get_avg(graphbolt_data[j]);
         tegra_data_avg[j] = get_avg(tegra_data[j]);
         trad_data_avg[j] = get_avg(trad_data[j]);
-    } 
+    }
+    double *graphbolt_sum = newA(double, ITER_NUM);
+    double *tegra_sum = newA(double, ITER_NUM);
+    double *trad_sum = newA(double, ITER_NUM);
     for(int j = 0; j < batch_time; j++)
     {
-        int n1 = -1, n2 = -1; // TODO: 修正评估算法
-        for(int i = 0; i < ITER_NUM; i++)
+        for(int i = 0; i < batch_time; i++)
         {
-            if(trad_data_avg[j][i] < graphbolt_data_avg[j][i] && n1 == -1)
-                n1 = i;
-            if(tegra_data_avg[j][i] < graphbolt_data_avg[j][i] && n2 == -1)
-                n2 = i;
+            if(i == 0)
+            {
+                graphbolt_sum[i] = graphbolt_data_avg[j][i];
+                tegra_sum[i] = tegra_data_avg[j][i];
+                trad_sum[i] = trad_data_avg[j][i];
+            }
+            else
+            {
+                graphbolt_sum[i] = graphbolt_sum[i - 1] + graphbolt_data_avg[j][i];
+                tegra_sum[i] = tegra_sum[i - 1] + tegra_data_avg[j][i];
+                trad_sum[i] = trad_sum[i - 1] + trad_data_avg[j][i];
+            }
+        }
+        int n1 = -1, n2 = -1; // TODO: 修正评估算法
+        double min_time = 99999999999;
+        for(int n_1 = 0; n_1 < ITER_NUM; n_1++)
+        {
+            for(int n_2 = n_1 + 1; n_2 < ITER_NUM; n_2++)
+            {
+                double sum = 0;
+                if(n_1 != 0)
+                {
+                    sum += graphbolt_sum[n1 - 1];
+                    sum += tegra_sum[n_2 - 1] - tegra_sum[n1 - 1];
+                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n2 - 1]; 
+                }
+                else
+                {
+                    sum += tegra_sum[n_2 - 1];
+                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n2 - 1];
+                }
+                if(sum < min_time)
+                {
+                    n1 = n_1;
+                    n2 = n_2;
+                    min_time = sum;
+                }
+            }
         }
         printf("degree_avg = %f\n", degree_avg[j]);
         printf("n1 = %d, n2 = %d\n", n1, n2);
@@ -140,5 +176,8 @@ int parallel_main(int argc, char *argv[])
         free(tegra_data_avg[j]);
         free(trad_data_avg[j]);
     }
+    free(graphbolt_sum);
+    free(tegra_sum);
+    free(trad_sum);
     return 0;
 }
