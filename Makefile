@@ -56,7 +56,6 @@ DEL_NOTES_TXT:
         echo "File not found." ; \
     fi
 
-
 RunAll: RMAT_Generator Generator Snap2Adj PageRankRuns ANALYSIS
 	echo "finish"
 

@@ -3,7 +3,7 @@ import pandas as pd
 import pickle
 
 # 加载模型
-with open('rf_model.pkl', 'wb') as f:
+with open('rf_model.pkl', 'rb') as f:
   rf_model = pickle.load(f)
 
 # 预测房屋销售价格
