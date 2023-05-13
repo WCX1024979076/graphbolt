@@ -3,12 +3,13 @@ from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+csv_path = '/home/wangcx/tmp/result.csv'
 # 读取数据
-data = pd.read_csv('house_prices.csv')
+data = pd.read_csv(csv_path)
 
 # 提取特征和目标变量
-features = data.drop('SalePrice', axis=1)
-target = data['SalePrice']
+features = data.drop('graphbolt_iter', axis=1)
+target = data['graphbolt_iter']
 
 # 将数据集分为训练集和测试集
 X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
@@ -19,7 +20,7 @@ rf_model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42
 # 拟合模型
 rf_model.fit(X_train, y_train)
 
-# 预测房屋销售价格
+# 预测迭代次数
 predicted_prices = rf_model.predict(X_test)
 
 # 计算MSE和R²指标

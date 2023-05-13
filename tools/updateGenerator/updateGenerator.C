@@ -38,7 +38,7 @@ int parallel_main(int argc, char *argv[]) {
     int batchtime = atol(P.getArgument(1));
     char *output_file_path = P.getArgument(0);
     
-    cout << "Reading graph and creating base SNAP file and edgeOperations File\n";
+    // cout << "Reading graph and creating base SNAP file and edgeOperations File\n";
     edgeArray G = readSNAP(iFile);
 
     //TODO：从图文件中抽取a%的边作为基础图  
@@ -67,8 +67,8 @@ int parallel_main(int argc, char *argv[]) {
         }
     }
 
-    cout << "G.nonZeros " << G.nonZeros << "\n";
-    cout << "Bnums " << Bnums << "\n";
+    // cout << "G.nonZeros " << G.nonZeros << "\n";
+    // cout << "Bnums " << Bnums << "\n";
     log_to_file("batch_rate = ", batchsize * 1.0 / Bnums);
     log_to_file("\n");
     log_to_file("batch_size = ", batchsize);
@@ -76,7 +76,7 @@ int parallel_main(int argc, char *argv[]) {
     log_to_file("batch_time = ", batchtime);
     log_to_file("\n");
     ofstream output_obfile;
-    cout << "Printing to file : " << (string)obFile << "\n";
+    // cout << "Printing to file : " << (string)obFile << "\n";
     output_obfile.open(obFile, ios::out);
     output_obfile << fixed;
     output_obfile << setprecision(VAL_PRECISION2);
@@ -84,7 +84,7 @@ int parallel_main(int argc, char *argv[]) {
         output_obfile << BE[i].u << "\t" << BE[i].v << "\n";
     
     ofstream output_oefile;
-    cout << "Printing to file : " << (string)oeFile << "\n";
+    // cout << "Printing to file : " << (string)oeFile << "\n";
     output_oefile.open(oeFile, ios::out);
     output_oefile << fixed;
     output_oefile << setprecision(VAL_PRECISION2);
@@ -115,9 +115,9 @@ int parallel_main(int argc, char *argv[]) {
             }
         }
         CalcPangeRank(ingraph, G, current_batch, output_file_path);
-        cout << "current_batch " << current_batch << "\t";
-        cout << "addbatchsize " << add_num << "\t";
-        cout << "dltbatchsize " << del_num << "\t";
+        // cout << "current_batch " << current_batch << "\t";
+        // cout << "addbatchsize " << add_num << "\t";
+        // cout << "dltbatchsize " << del_num << "\t";
         uint64_t d_sum = 0;
         for (uintV i = 0; i < add_num; i++) {
             output_oefile << "a" << "\t" << AE[i].u << "\t" << AE[i].v << "\n";
@@ -128,7 +128,8 @@ int parallel_main(int argc, char *argv[]) {
             d_sum += d_out[DE[i].u];
         }
         double d_avg = d_sum * 1.0 / (add_num + del_num);
-        cout << "degree_avg " << d_avg << "\n";
+        // cout << "degree_avg " << d_avg << "\n";
+        cout << d_avg << "\n";
 
         log_to_file("degree_avg = ", d_avg);
         log_to_file("\n");
@@ -199,7 +200,7 @@ void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_
 		}
 	}
     string curr_output_file_path = output_file_path + to_string(current_batch);
-    std::cout << "Printing to file : " << curr_output_file_path << "\n";
+    // std::cout << "Printing to file : " << curr_output_file_path << "\n";
     ofstream output_file;
     output_file.open(curr_output_file_path, ios::out);
     output_file << fixed;

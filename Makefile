@@ -6,11 +6,12 @@ SNAP_VERTEX_NUM = 750000
 SNAP_EDGE_NUM = 4194304
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE = 0.7
-
 OUTPUT_STD = ~/tmp/output_std/pr_output
 OUTPUT     = ~/tmp/output1/pr_output
 DIFF       = ~/tmp/diff/pr_output
 CORE_NUM   = 4
+DEGREE_AVG = 0.0
+GRAPHBOLT_ITER = 0
 
 tools = $(PWD)/tools
 inputs = $(PWD)/inputs
@@ -18,34 +19,37 @@ apps = $(PWD)/apps
 
 .PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT
 
-export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE
+export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG
 
 Generator :
-	cd $(tools)/updateGenerator && make run
+	# 由于子Makefile 不太好传递变量到父 Makefile当中，所以只能这么实现
+	$(MAKE) -C $(tools)/updateGenerator run
+	$(eval DEGREE_AVG := $(shell ./tools/updateGenerator/updateGenerator ./inputs/$(FILE_NAME).snap ./inputs/$(FILE_NAME)_init.snap ./inputs/$(FILE_NAME)_operations.txt $(BASE_GRAPH_RATE) $(BATCH_ADD_RATE) $(BATCH_SIZE) $(BATCH_TIME) $(OUTPUT_STD)))
 
 Snap2Adj :
-	cd $(tools)/converters && make run
+	$(MAKE) -C $(tools)/converters run
 
 PageRank :
-	cd $(apps) && make PageRankRun
+	$(MAKE) -C $(apps) PageRankRun
 
 PRCompare :
-	cd $(tools)/output_comparators && make PRCompare
+	$(MAKE) -C $(tools)/output_comparators PRCompare
 
 PageRankRuns :
-	cd $(apps) && make PageRankRuns
-
+	$(MAKE) -C $(apps) PageRankRuns
+	
 RMAT_Generator:
-	cd $(tools)/PaRMAT/Release && make RMAT_Generator
+	$(MAKE) -C $(tools)/PaRMAT/Release RMAT_Generator
 
 ANALYSIS:
-	cd $(tools)/analysis && make run
+	$(MAKE) -C $(tools)/analysis run
 
 RF_TRAIN:
-	cd $(tools)/mechine_train && make TRAIN
-
+	$(MAKE) -C $(tools)/mechine_train TRAIN
+	
 RF_PREDICT:
-	cd $(tools)/mechine_train && make PREDICT
+	$(MAKE) -C $(tools)/mechine_train PREDICT
+	$(eval GRAPHBOLT_ITER := $(shell python3 ./tools/mechine_train/predict.py $(BATCH_SIZE) $(SNAP_VERTEX_NUM) $(SNAP_EDGE_NUM) $(BATCH_ADD_RATE) $(DEGREE_AVG)))
 
 DEL_NOTES_TXT:
 	@if test -e /home/wangcx/tmp/notes.txt ; \

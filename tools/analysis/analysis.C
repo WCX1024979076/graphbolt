@@ -4,6 +4,10 @@
 #include "../../core/common/utils.h"
 #include <cassert>
 #include <ctime>
+#include <cstdio>
+#include <cstring>
+#include <unistd.h>
+
 #define ITER_NUM 50
 #define BATCH_TIME 10
 char name[100];
@@ -52,7 +56,16 @@ int parallel_main(int argc, char *argv[])
     scanf("batch_size = %lld\n", &batch_size);
     scanf("batch_time = %lld\n", &batch_time);
 
-    FILE *fp1 = freopen("/home/wangcx/tmp/notes7.txt", "a", stdout);
+    FILE *fp1 = freopen("/home/wangcx/tmp/notes7.txt", "a", stdout), *fp2;
+    if(access("/home/wangcx/tmp/result.csv", F_OK) != -1)
+    {
+       fp2 = fopen("/home/wangcx/tmp/result.csv", "a");
+    }
+    else
+    {
+       fp2 = fopen("/home/wangcx/tmp/result.csv", "a");
+       fprintf(fp2, "batch_size,snap_vertex_num,snap_edge_num,batch_add_rate,degree_avg,graphbolt_iter\n");
+    }
     printf("BATCH_SIZE = %lld\n", batch_size);
     printf("SNAP_VERTEX_NUM = %lld\n", snap_vertex_num);
     printf("SNAP_EDGE_NUM = %lld\n", snap_edge_num);
@@ -64,6 +77,7 @@ int parallel_main(int argc, char *argv[])
     for(int j = 0; j < batch_time; j++) {
         scanf("degree_avg = %lf\n", &degree_avg[j]);
     }
+    fprintf(fp2, "%lld,%lld,%lld,%f,%f", batch_size, snap_vertex_num, snap_edge_num, batch_add_rate, degree_avg[0]);
     double *graphbolt_data[BATCH_TIME][3], *tegra_data[BATCH_TIME][3], *trad_data[BATCH_TIME][3]; 
     double *graphbolt_data_avg[BATCH_TIME], *tegra_data_avg[BATCH_TIME], *trad_data_avg[BATCH_TIME]; 
     double *initial_data[9];
@@ -148,6 +162,7 @@ int parallel_main(int argc, char *argv[])
         }
         printf("degree_avg = %f\n", degree_avg[j]);
         printf("n1 = %d, n2 = %d\n", n1, n2);
+        fprintf(fp2, ",%d\n", n1);
     }
     
     for(int j = 0; j < batch_time; j++)
@@ -179,5 +194,6 @@ int parallel_main(int argc, char *argv[])
     free(graphbolt_sum);
     free(tegra_sum);
     free(trad_sum);
+    fclose(fp2);
     return 0;
 }
