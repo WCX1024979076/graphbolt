@@ -16,7 +16,7 @@ tools = $(PWD)/tools
 inputs = $(PWD)/inputs
 apps = $(PWD)/apps
 
-.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS
+.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT
 
 export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE
 
@@ -41,6 +41,12 @@ RMAT_Generator:
 ANALYSIS:
 	cd $(tools)/analysis && make run
 
+RF_TRAIN:
+	cd $(tools)/mechine_train && make TRAIN
+
+RF_PREDICT:
+	cd $(tools)/mechine_train && make PREDICT
+
 DEL_NOTES_TXT:
 	@if test -e /home/wangcx/tmp/notes.txt ; \
     then \
@@ -49,6 +55,7 @@ DEL_NOTES_TXT:
     else \
         echo "File not found." ; \
     fi
+
 
 RunAll: RMAT_Generator Generator Snap2Adj PageRankRuns ANALYSIS
 	echo "finish"
