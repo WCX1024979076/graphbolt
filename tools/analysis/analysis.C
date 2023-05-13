@@ -105,7 +105,7 @@ int parallel_main(int argc, char *argv[])
     double *trad_sum = newA(double, ITER_NUM);
     for(int j = 0; j < batch_time; j++)
     {
-        for(int i = 0; i < batch_time; i++)
+        for(int i = 0; i < ITER_NUM; i++)
         {
             if(i == 0)
             {
@@ -129,14 +129,14 @@ int parallel_main(int argc, char *argv[])
                 double sum = 0;
                 if(n_1 != 0)
                 {
-                    sum += graphbolt_sum[n1 - 1];
-                    sum += tegra_sum[n_2 - 1] - tegra_sum[n1 - 1];
-                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n2 - 1]; 
+                    sum += graphbolt_sum[n_1 - 1];
+                    sum += tegra_sum[n_2 - 1] - tegra_sum[n_1 - 1];
+                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n_2 - 1]; 
                 }
                 else
                 {
                     sum += tegra_sum[n_2 - 1];
-                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n2 - 1];
+                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n_2 - 1];
                 }
                 if(sum < min_time)
                 {
