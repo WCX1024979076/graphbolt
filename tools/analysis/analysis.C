@@ -52,7 +52,7 @@ int parallel_main(int argc, char *argv[])
     scanf("batch_size = %lld\n", &batch_size);
     scanf("batch_time = %lld\n", &batch_time);
 
-    FILE *fp1 = freopen("/home/wangcx/tmp/notes6.txt", "a", stdout);
+    FILE *fp1 = freopen("/home/wangcx/tmp/notes7.txt", "a", stdout);
     printf("BATCH_SIZE = %lld\n", batch_size);
     printf("SNAP_VERTEX_NUM = %lld\n", snap_vertex_num);
     printf("SNAP_EDGE_NUM = %lld\n", snap_edge_num);
