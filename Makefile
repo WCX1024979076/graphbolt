@@ -1,21 +1,21 @@
-PWD = $(shell pwd)
-FILE_NAME = rmat
-BATCH_SIZE = 100000
-BATCH_TIME = 10
+PWD             = $(shell pwd)
+FILE_NAME       = rmat
+BATCH_SIZE      = 100000
+BATCH_TIME      = 10
 SNAP_VERTEX_NUM = 750000
-SNAP_EDGE_NUM = 4194304
+SNAP_EDGE_NUM   = 4194304
 BASE_GRAPH_RATE = 0.5
-BATCH_ADD_RATE = 0.7
-OUTPUT_STD = ~/tmp/output_std/pr_output
-OUTPUT     = ~/tmp/output1/pr_output
-DIFF       = ~/tmp/diff/pr_output
-CORE_NUM   = 4
-DEGREE_AVG = 0.0
-GRAPHBOLT_ITER = 0
+BATCH_ADD_RATE  = 0.7
+OUTPUT_STD      = ~/tmp/output_std/pr_output
+OUTPUT          = ~/tmp/output1/pr_output
+DIFF            = ~/tmp/diff/pr_output
+CORE_NUM        = 4
+DEGREE_AVG      = 0.0
+GRAPHBOLT_ITER  = 0
 
-tools = $(PWD)/tools
+tools  = $(PWD)/tools
 inputs = $(PWD)/inputs
-apps = $(PWD)/apps
+apps   = $(PWD)/apps
 
 .PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT
 
@@ -50,6 +50,9 @@ RF_TRAIN:
 RF_PREDICT:
 	$(MAKE) -C $(tools)/mechine_train PREDICT
 	$(eval GRAPHBOLT_ITER := $(shell python3 ./tools/mechine_train/predict.py $(BATCH_SIZE) $(SNAP_VERTEX_NUM) $(SNAP_EDGE_NUM) $(BATCH_ADD_RATE) $(DEGREE_AVG)))
+
+RF_EVAL:
+	$(MAKE) -C $(tools)/mechine_train EVAL
 
 DEL_NOTES_TXT:
 	@if test -e /home/wangcx/tmp/notes.txt ; \
