@@ -35,10 +35,10 @@ class GraphBoltEngineSimple
 public:
   GraphBoltEngineSimple(graph<vertex> &_my_graph, int _max_iter,
                         GlobalInfoType &_static_data, bool _use_lock,
-                        commandLine _config)
+                        commandLine _config, int _graphbolt_iter)
       : GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>(_my_graph, _max_iter, _static_data,
-                                        _use_lock, _config) {
+                                        _use_lock, _config, _graphbolt_iter) {
     use_source_contribution = true;
   }
 
@@ -101,7 +101,12 @@ public:
           // Copy the aggregate and actual value from iter-1 to iter
           parallel_for(uintV v = 0; v < n; v++) {
             vertex_values[iter][v] = vertex_values[iter - 1][v];
+#ifdef MECHINE_ITER
+            if(iter <= graphbolt_iterations)
+              aggregation_values[iter][v] = aggregation_values_tmp[v];
+#else
             aggregation_values[iter][v] = aggregation_values[iter - 1][v];
+#endif
             delta[v] = aggregationValueIdentity<AggregationValueType>();
           }
         }
@@ -177,15 +182,24 @@ public:
             frontier_next[v] = 0;
             // Update aggregation value and reset change received[v] (i.e.
             // delta[v])
+#ifdef MECHINE_ITER
+            addToAggregation(delta[v], aggregation_values_tmp[v],
+                             global_info);
+#else
             addToAggregation(delta[v], aggregation_values[iter][v],
                              global_info);
+#endif
             delta[v] = aggregationValueIdentity<AggregationValueType>();
 
             // Calculate new_value based on the updated aggregation value
             VertexValueType new_value;
+#ifdef MECHINE_ITER
+            computeFunction(v, aggregation_values_tmp[v],
+                            vertex_values[iter - 1][v], new_value, global_info); //根据聚合值重新计算顶点值
+#else
             computeFunction(v, aggregation_values[iter][v],
                             vertex_values[iter - 1][v], new_value, global_info); //根据聚合值重新计算顶点值
-
+#endif
             // Check if change is significant
             if (notDelZero(new_value, vertex_values[iter - 1][v], global_info)) { //阈值判断
               // change is significant. Update vertex_values
@@ -308,7 +322,7 @@ public:
         if (frontier_curr[v]) {
           // check for propagate and retract for the vertices.
           intE inDegree = my_graph.V[v].getInDegree();
-          aggregation_values[iter][v] = vertexValueIdentity<VertexValueType>();
+          aggregation_values_tmp[v] = vertexValueIdentity<VertexValueType>();
           
           granular_for(i, 0, inDegree, (inDegree > 1024), {
             uintV u = my_graph.V[v].getInNeighbor(i);
@@ -331,12 +345,12 @@ public:
               if (use_lock) {
                 vertex_locks[v].writeLock();
                 if (ret) {
-                  addToAggregation(contrib_change, aggregation_values[iter][v], global_info);
+                  addToAggregation(contrib_change, aggregation_values_tmp[v], global_info);
                 }
                 vertex_locks[v].unlock();
               } else {
                 if (ret) {
-                  addToAggregationAtomic(contrib_change, aggregation_values[iter][v] , global_info);
+                  addToAggregationAtomic(contrib_change, aggregation_values_tmp[v] , global_info);
                 }
               }
             } 
@@ -347,7 +361,7 @@ public:
       parallel_for(uintV u = 0; u < n; u++) { 
         if(frontier_curr[u]) {
           VertexValueType new_value;
-          computeFunction(u, aggregation_values[iter][u],
+          computeFunction(u, aggregation_values_tmp[u],
               vertex_values[iter - 1][u], new_value, global_info);
           if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info))) {
             vertex_values[iter][u] = new_value;
@@ -360,7 +374,7 @@ public:
             changed[u] = 1;
           } else if ((notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
               vertex_values[iter][u] = vertex_values[iter - 1][u];
-              aggregation_values[iter][u] = aggregation_values[iter - 1][u];
+              // aggregation_values[iter][u] = aggregation_values[iter - 1][u];
               frontier_next[u] = 1;
               intE outDegree = my_graph.V[u].getOutDegree();
               granular_for(i, 0, outDegree, (outDegree > 1024), {
@@ -370,11 +384,11 @@ public:
               changed[u] = 1;
           } else {
             vertex_values[iter][u] = vertex_values[iter - 1][u];
-            aggregation_values[iter][u] = aggregation_values[iter - 1][u];
+            // aggregation_values[iter][u] = aggregation_values[iter - 1][u];
           }
         } else if(changed[u]) {
           vertex_values[iter][u] = vertex_values[iter - 1][u];
-          aggregation_values[iter][u] = aggregation_values[iter - 1][u];
+          // aggregation_values[iter][u] = aggregation_values[iter - 1][u];
         }
       }
 
@@ -610,6 +624,11 @@ public:
     if (ae_enabled && shouldSwitch(0, 0)) {
       should_switch_now = true;
     }
+
+#ifdef MECHINE_ITER
+    if(graphbolt_iterations == 0)
+      should_switch_now = true;
+#endif
 
     for (int iter = 1; iter < max_iterations; iter++) {
       // Perform switch if needed
@@ -927,6 +946,10 @@ public:
       if (ae_enabled && shouldSwitch(iter, iteration_time)) {
         should_switch_now = true;
       }
+#ifdef MECHINE_ITER
+      if(iter > graphbolt_iterations)
+        should_switch_now = true;
+#endif
       misc_time += phase_timer.stop();
       iteration_time += iteration_timer.stop();
     }
@@ -935,7 +958,7 @@ public:
     cout << "Number of iterations : " << converged_iteration << "\n";
     // testPrint();
     log_to_file("\n");
-    // printOutput();
+    printOutput();
   }
 
   // Refactor this in a better way
@@ -955,6 +978,8 @@ public:
                         GlobalInfoType>::vertex_locks;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::aggregation_values;
+  using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
+                        GlobalInfoType>::aggregation_values_tmp;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::vertex_values;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,

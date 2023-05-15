@@ -297,7 +297,7 @@ template <class vertex> void compute(graph<vertex> &G, commandLine config) { //è
 
   cout << "Initializing engine ....\n";
   GraphBoltEngineSimple<vertex, double, double, PageRankInfo<vertex>> engine(
-      G, max_iters, global_info, false, config);
+      G, max_iters, global_info, false, config, graphbolt_iters);
   engine.init();
   cout << "Finished initializing engine\n";
 

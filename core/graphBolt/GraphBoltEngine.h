@@ -262,6 +262,7 @@ public:
 
   // TODO: Currently, history_iterations = max_iterations
   int max_iterations;
+  int graphbolt_iterations;
   int history_iterations;
   int converged_iteration;
   bool use_lock;
@@ -270,6 +271,7 @@ public:
 
   // Dependency information
   AggregationValueType **aggregation_values;
+  AggregationValueType *aggregation_values_tmp;
   VertexValueType **vertex_values;
 
   // Current graph
@@ -309,12 +311,12 @@ public:
   // ======================================================================
   GraphBoltEngine(graph<vertex> &_my_graph, int _max_iter,
                   GlobalInfoType &_global_info, bool _use_lock,
-                  commandLine _config)
+                  commandLine _config, int _graphbolt_iter)
       : my_graph(_my_graph), max_iterations(_max_iter),
         history_iterations(_max_iter), converged_iteration(0),
         global_info(_global_info), use_lock(_use_lock), global_info_old(),
         config(_config), ingestor(_my_graph, _config), current_batch(0),
-        adaptive_executor(history_iterations) {
+        adaptive_executor(history_iterations), graphbolt_iterations(_graphbolt_iter) {
     n = my_graph.n;
     n_old = 0;
     if (use_lock) {
@@ -371,22 +373,40 @@ public:
     aggregation_values = newA(AggregationValueType *, history_iterations);
     vertex_values = newA(VertexValueType *, history_iterations);
     for (int i = 0; i < history_iterations; i++) {
-      aggregation_values[i] = newA(AggregationValueType, n);
       vertex_values[i] = newA(VertexValueType, n);
+    }
+#ifdef MECHINE_ITER
+    for(int i = 0; i < graphbolt_iterations; i++) {
+#else
+    for (int i = 0; i < history_iterations; i++) {
+#endif
+      aggregation_values[i] = newA(AggregationValueType, n);
     }
   }
   void resizeDependencyData() {
     for (int i = 0; i < history_iterations; i++) {
-      aggregation_values[i] =
-          renewA(AggregationValueType, aggregation_values[i], n);
       vertex_values[i] = renewA(VertexValueType, vertex_values[i], n);
+    }
+#ifdef MECHINE_ITER
+    for(int i = 0; i < graphbolt_iterations; i++) {
+#else
+    for (int i = 0; i < history_iterations; i++) {
+#endif
+          aggregation_values[i] =
+          renewA(AggregationValueType, aggregation_values[i], n);
     }
     initDependencyData(n_old, n);
   }
   void freeDependencyData() {
     for (int i = 0; i < history_iterations; i++) {
-      deleteA(aggregation_values[i]);
       deleteA(vertex_values[i]);
+    }
+#ifdef MECHINE_ITER
+    for(int i = 0; i < graphbolt_iterations; i++) {
+#else
+    for (int i = 0; i < history_iterations; i++) {
+#endif
+      deleteA(aggregation_values[i]);
     }
     deleteA(aggregation_values);
     deleteA(vertex_values);
@@ -395,10 +415,18 @@ public:
   void initDependencyData(long start_index, long end_index) {
     for (int iter = 0; iter < history_iterations; iter++) {
       parallel_for(long v = start_index; v < end_index; v++) {
-        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
-            v, aggregation_values[iter][v], global_info);
         initializeVertexValue<VertexValueType, GlobalInfoType>(
             v, vertex_values[iter][v], global_info);
+      }
+    }
+#ifdef MECHINE_ITER
+    for(int iter = 0; iter < graphbolt_iterations; iter++) {
+#else
+    for (int iter = 0; iter < history_iterations; iter++) {
+#endif
+      parallel_for(long v = start_index; v < end_index; v++) {
+        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
+            v, aggregation_values[iter][v], global_info);
       }
     }
   }
@@ -410,6 +438,7 @@ public:
     vertex_value_old_next = newA(VertexValueType, n);
     vertex_value_old_curr = newA(VertexValueType, n);
     vertex_value_old_prev = newA(VertexValueType, n);
+    aggregation_values_tmp = newA(AggregationValueType, n);
     delta = newA(AggregationValueType, n);
     if (use_source_contribution)
       source_change_in_contribution = newA(AggregationValueType, n);
