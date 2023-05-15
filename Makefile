@@ -44,6 +44,12 @@ RMAT_Generator:
 ANALYSIS:
 	$(MAKE) -C $(tools)/analysis run
 
+SVM_TRAIN:
+	$(MAKE) -C $(tools)/mechine_svm TRAIN
+
+SVM_EVAL:
+	$(MAKE) -C $(tools)/mechine_svm EVAL
+
 RF_TRAIN:
 	$(MAKE) -C $(tools)/mechine_train TRAIN
 	
@@ -67,6 +73,6 @@ RunAll: RMAT_Generator Generator Snap2Adj PageRankRuns ANALYSIS
 	echo "finish"
 
 RunPy:
-	for i in {1..10}; do \
+	for i in {1..100}; do \
 		python3 run.py; \
 	done
