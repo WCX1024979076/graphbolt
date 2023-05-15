@@ -44,6 +44,12 @@ RMAT_Generator:
 ANALYSIS:
 	$(MAKE) -C $(tools)/analysis run
 
+XGB_TRAIN:
+	$(MAKE) -C $(tools)/mechine_xgb TRAIN
+
+XGB_EVAL:
+	$(MAKE) -C $(tools)/mechine_xgb EVAL
+
 SVM_TRAIN:
 	$(MAKE) -C $(tools)/mechine_svm TRAIN
 
@@ -51,14 +57,14 @@ SVM_EVAL:
 	$(MAKE) -C $(tools)/mechine_svm EVAL
 
 RF_TRAIN:
-	$(MAKE) -C $(tools)/mechine_train TRAIN
+	$(MAKE) -C $(tools)/mechine_rf TRAIN
 	
 RF_PREDICT:
-	$(MAKE) -C $(tools)/mechine_train PREDICT
-	$(eval GRAPHBOLT_ITER := $(shell python3 ./tools/mechine_train/predict.py $(BATCH_SIZE) $(SNAP_VERTEX_NUM) $(SNAP_EDGE_NUM) $(BATCH_ADD_RATE) $(DEGREE_AVG)))
+	$(MAKE) -C $(tools)/mechine_rf PREDICT
+	$(eval GRAPHBOLT_ITER := $(shell python3 ./tools/mechine_rf/predict.py $(BATCH_SIZE) $(SNAP_VERTEX_NUM) $(SNAP_EDGE_NUM) $(BATCH_ADD_RATE) $(DEGREE_AVG)))
 
 RF_EVAL:
-	$(MAKE) -C $(tools)/mechine_train EVAL
+	$(MAKE) -C $(tools)/mechine_rf EVAL
 
 DEL_NOTES_TXT:
 	@if test -e /home/wangcx/tmp/notes.txt ; \

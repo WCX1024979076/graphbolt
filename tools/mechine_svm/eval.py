@@ -1,22 +1,26 @@
 # 导入必要的库
+import pandas as pd
 import numpy as np
 from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 
 csv_path = '/home/wangcx/tmp/result.csv'
-# 加载数据
-data = np.loadtxt(csv_path, delimiter=',')
+# 读取数据
+data = pd.read_csv(csv_path)
 
-# 将特征和目标变量分离开来
-X = data[:, :-1]
-y = data[:, -1]
+# 提取特征和目标变量
+features = data.drop('graphbolt_iter', axis=1)
+target = data['graphbolt_iter']
 
 # 将数据集划分为训练集和测试集
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=143)
 
 # 创建SVM回归模型
-svr_model = SVR(kernel='rbf')
+svr_model = SVR(kernel='rbf', gamma=0.0001)
+# svr_model = SVR(kernel='sigmoid', coef0=1)
+# svr_model = SVR(kernel='poly', degree=3, coef0=1)
+
 
 # 训练模型
 svr_model.fit(X_train, y_train)
