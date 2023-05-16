@@ -69,12 +69,6 @@ int parallel_main(int argc, char *argv[]) {
 
     // cout << "G.nonZeros " << G.nonZeros << "\n";
     // cout << "Bnums " << Bnums << "\n";
-    log_to_file("batch_rate = ", batchsize * 1.0 / Bnums);
-    log_to_file("\n");
-    log_to_file("batch_size = ", batchsize);
-    log_to_file("\n");
-    log_to_file("batch_time = ", batchtime);
-    log_to_file("\n");
     ofstream output_obfile;
     // cout << "Printing to file : " << (string)obFile << "\n";
     output_obfile.open(obFile, ios::out);
@@ -115,9 +109,6 @@ int parallel_main(int argc, char *argv[]) {
             }
         }
         CalcPangeRank(ingraph, G, current_batch, output_file_path);
-        // cout << "current_batch " << current_batch << "\t";
-        // cout << "addbatchsize " << add_num << "\t";
-        // cout << "dltbatchsize " << del_num << "\t";
         uint64_t d_sum = 0;
         for (uintV i = 0; i < add_num; i++) {
             output_oefile << "a" << "\t" << AE[i].u << "\t" << AE[i].v << "\n";
@@ -130,9 +121,6 @@ int parallel_main(int argc, char *argv[]) {
         double d_avg = d_sum * 1.0 / (add_num + del_num);
         // cout << "degree_avg " << d_avg << "\n";
         cout << d_avg << "\n";
-
-        log_to_file("degree_avg = ", d_avg);
-        log_to_file("\n");
     }
 
     output_obfile.close();

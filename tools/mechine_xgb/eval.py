@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 import numpy as np
+from sklearn.metrics import mean_squared_error, r2_score
 
 # TODO 归一化 特征变化较大
 
@@ -29,4 +30,14 @@ xg_reg.fit(X_train,y_train)
 # 预测结果并计算误差
 preds = xg_reg.predict(X_test)
 rmse = np.sqrt(mean_squared_error(y_test, preds))
+r2 = r2_score(y_test, preds)
 print("RMSE: %f" % (rmse))
+print(r2)
+for i in y_test:
+  print("%02d" % i ,end = " ")
+print()
+for i in preds :
+  if i <= 0 :
+    print("%02d" % i, end = " ")
+  else :
+    print("%02d" % int(i) , end = " ")
