@@ -4,6 +4,8 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 import numpy as np
 
+# TODO 归一化 特征变化较大
+
 csv_path = '/home/wangcx/tmp/result.csv'
 # 读取数据
 data = pd.read_csv(csv_path)

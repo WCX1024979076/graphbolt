@@ -77,7 +77,7 @@ int parallel_main(int argc, char *argv[])
     for(int j = 0; j < batch_time; j++) {
         scanf("degree_avg = %lf\n", &degree_avg[j]);
     }
-    fprintf(fp2, "%lld,%lld,%lld,%f,%f", batch_size, snap_vertex_num, snap_edge_num, batch_add_rate, degree_avg[0]);
+    fprintf(fp2, "%lld,%lld,%lld,%f,%f", batch_size, snap_vertex_num, snap_edge_num, z, degree_avg[0]);
     double *graphbolt_data[BATCH_TIME][3], *tegra_data[BATCH_TIME][3], *trad_data[BATCH_TIME][3]; 
     double *graphbolt_data_avg[BATCH_TIME], *tegra_data_avg[BATCH_TIME], *trad_data_avg[BATCH_TIME]; 
     double *initial_data[9];
