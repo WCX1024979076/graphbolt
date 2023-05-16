@@ -59,4 +59,4 @@ clean:
 -include ../makefile.targets
 
 RMAT_Generator: PaRMAT
-	./PaRMAT -nVertices $(SNAP_VERTEX_NUM) -nEdges $(SNAP_EDGE_NUM) -output ../../../inputs/$(FILE_NAME).snap -noDuplicateEdges -noEdgeToSelf
+	./PaRMAT -nVertices $(SNAP_VERTEX_NUM) -nEdges $(SNAP_EDGE_NUM) -output ../../../inputs/$(FILE_NAME).snap -noDuplicateEdges -noEdgeToSelf -a 0.57 -b 0.19 -c 0.19
