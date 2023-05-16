@@ -10,7 +10,7 @@ OUTPUT_STD      = ~/tmp/output_std/pr_output
 OUTPUT          = ~/tmp/output1/pr_output
 DIFF            = ~/tmp/diff/pr_output
 CORE_NUM        = 4
-DEGREE_AVG      = 0.0
+DEGREE_AVG      = 16
 GRAPHBOLT_ITER  = 0
 
 tools  = $(PWD)/tools
@@ -22,9 +22,7 @@ apps   = $(PWD)/apps
 export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG
 
 Generator :
-	# 由于子Makefile 不太好传递变量到父 Makefile当中，所以只能这么实现
 	$(MAKE) -C $(tools)/updateGenerator run
-	$(eval DEGREE_AVG := $(shell ./tools/updateGenerator/updateGenerator ./inputs/$(FILE_NAME).snap ./inputs/$(FILE_NAME)_init.snap ./inputs/$(FILE_NAME)_operations.txt $(BASE_GRAPH_RATE) $(BATCH_ADD_RATE) $(BATCH_SIZE) $(BATCH_TIME) $(OUTPUT_STD)))
 
 Snap2Adj :
 	$(MAKE) -C $(tools)/converters run

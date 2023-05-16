@@ -46,15 +46,15 @@ def makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TI
     the_file.write("BATCH_TIME = " + str(BATCH_TIME) + "\n")
     the_file.write("DEGREE_AVG = " + str(DEGREE_AVG) + "\n")
   
-  cmd = ["make", "RunAll", "BATCH_SIZE=" + str(BATCH_SIZE), "SNAP_VERTEX_NUM=" + str(SNAP_VERTEX_NUM), "SNAP_EDGE_NUM=" + str(SNAP_EDGE_NUM), "BASE_GRAPH_RATE=" + str(BASE_GRAPH_RATE), "BATCH_ADD_RATE=" + str(BATCH_ADD_RATE), "BATCH_TIME="+str(BATCH_TIME)]
+  cmd = ["make", "RunAll", "BATCH_SIZE=" + str(BATCH_SIZE), "SNAP_VERTEX_NUM=" + str(SNAP_VERTEX_NUM), "SNAP_EDGE_NUM=" + str(SNAP_EDGE_NUM), "BASE_GRAPH_RATE=" + str(BASE_GRAPH_RATE), "BATCH_ADD_RATE=" + str(BATCH_ADD_RATE), "BATCH_TIME="+str(BATCH_TIME), "DEGREE_AVG=" + str(DEGREE_AVG)]
 
   os.system(" ".join(cmd))
 
   return
 
-makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TIME)
+# makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TIME)
 
-# for n_1 in BATCH_SIZE_ARR :
-#   for n_2 in SNAP_VERTEX_NUM_ARR :
-#     for n_3 in BATCH_ADD_RATE_ARR :
-#       makerun(n_1, n_2, DEGREE_AVG * n_2, n_3, BATCH_TIME)
+for n_1 in BATCH_SIZE_ARR :
+  for n_2 in SNAP_VERTEX_NUM_ARR :
+    for n_3 in BATCH_ADD_RATE_ARR :
+      makerun(n_1, n_2, DEGREE_AVG * n_2, n_3, BATCH_TIME)

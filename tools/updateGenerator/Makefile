@@ -24,5 +24,4 @@ clean :
 	rm -f *.o $(CONVERTERS)
 
 run : all
-	echo "build finish";
-	
+	./updateGenerator ../../inputs/$(FILE_NAME).snap ../../inputs/$(FILE_NAME)_init.snap ../../inputs/$(FILE_NAME)_operations.txt $(BASE_GRAPH_RATE) $(BATCH_ADD_RATE) $(BATCH_SIZE) $(BATCH_TIME) $(OUTPUT_STD)
