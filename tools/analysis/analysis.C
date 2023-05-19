@@ -116,47 +116,14 @@ int parallel_main(int argc, char *argv[])
     double *trad_sum = newA(double, ITER_NUM);
     for(int j = 0; j < batch_time; j++)
     {
+        int n1 = -1, n2 = -1; // TODO: 修正评估算法
         for(int i = 0; i < ITER_NUM; i++)
         {
-            if(i == 0)
-            {
-                graphbolt_sum[i] = graphbolt_data_avg[j][i];
-                tegra_sum[i] = tegra_data_avg[j][i];
-                trad_sum[i] = trad_data_avg[j][i];
-            }
-            else
-            {
-                graphbolt_sum[i] = graphbolt_sum[i - 1] + graphbolt_data_avg[j][i];
-                tegra_sum[i] = tegra_sum[i - 1] + tegra_data_avg[j][i];
-                trad_sum[i] = trad_sum[i - 1] + trad_data_avg[j][i];
-            }
+            if(trad_data_avg[j][i] < graphbolt_data_avg[j][i] && n1 == -1)
+                n1 = i;
+            if(tegra_data_avg[j][i] < graphbolt_data_avg[j][i] && n2 == -1)
+                n2 = i;
         }
-        int n1 = -1, n2 = -1; // TODO: 修正评估算法
-        double min_time = 99999999999;
-        for(int n_1 = 0; n_1 < ITER_NUM; n_1++)
-        {
-            for(int n_2 = n_1 + 1; n_2 < ITER_NUM; n_2++)
-            {
-                double sum = 0;
-                if(n_1 != 0)
-                {
-                    sum += graphbolt_sum[n_1 - 1];
-                    sum += tegra_sum[n_2 - 1] - tegra_sum[n_1 - 1];
-                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n_2 - 1]; 
-                }
-                else
-                {
-                    sum += tegra_sum[n_2 - 1];
-                    sum += trad_sum[ITER_NUM - 1] - trad_sum[n_2 - 1];
-                }
-                if(sum < min_time)
-                {
-                    n1 = n_1;
-                    n2 = n_2;
-                    min_time = sum;
-                }
-            }
-        } //TODO: 校验 n1 和 n2
         printf("n1 = %d, n2 = %d\n", n1, n2);
         fprintf(fp2, ",%d\n", n1);
     }
