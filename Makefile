@@ -9,7 +9,7 @@ BATCH_ADD_RATE  = 0.7
 OUTPUT_STD      = ~/tmp/output_std/pr_output
 OUTPUT          = ~/tmp/output1/pr_output
 DIFF            = ~/tmp/diff/pr_output
-CORE_NUM        = 4
+CORE_NUM        = 52
 DEGREE_AVG      = 16
 GRAPHBOLT_ITER  = 0
 

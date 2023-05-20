@@ -55,13 +55,13 @@ clean :
 
 PageRankRun : PageRank
 	# taskset -c $(CORE_LIST) 
-	./PageRank -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	./PageRank -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
 PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
 	for i in {3..5}; do \
-	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
-	taskset -c $(CORE_LIST) ./PageRankTegra -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
-	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	taskset -c $(CORE_LIST) ./PageRankDelta -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	taskset -c $(CORE_LIST) ./PageRankTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
+	taskset -c $(CORE_LIST) ./PageRankTrad  -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
 	done
 
 	echo "finish"
