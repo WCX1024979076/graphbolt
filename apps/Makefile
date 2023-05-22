@@ -42,20 +42,34 @@ PageRankDelta : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 PageRankTrad : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
 
-PageRankAe :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+PageRankAe : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
 
-PageRankTegra :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+PageRankTegra : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) -Dtegra_calc $< $(LDFLAGS) -o $@
 
-.PHONY : clean
+PageRankMechine : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -DMECHINE_ITER $< $(LDFLAGS) -o $@
+
+PageRankRunDelta: PageRankDelta
+	taskset -c $(CORE_LIST) ./PageRankDelta -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+
+PageRankRunTrad: PageRankTrad
+	taskset -c $(CORE_LIST) ./PageRankTrad -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+
+PageRankRunAe: PageRankAe
+	taskset -c $(CORE_LIST) ./PageRankAe -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+
+PageRankRunMechine: PageRankMechine
+	taskset -c $(CORE_LIST) ./PageRankMechine -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+
+.PHONY : clean PageRankRunDelta PageRankRun PageRankRuns PageRankRunDelta PageRankRunTrad PageRankRunAe PageRankRunMechine
 
 clean :
 	rm -f *.o *.obj $(ALL)
 
 PageRankRun : PageRank
-	# taskset -c $(CORE_LIST) 
-	./PageRank -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRank -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
 PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
 	for i in {3..5}; do \

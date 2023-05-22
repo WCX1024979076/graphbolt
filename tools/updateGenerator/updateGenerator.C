@@ -188,7 +188,7 @@ void CalcPangeRank(bool *ingraph, edgeArray G, int current_batch, string output_
 		}
 	}
     string curr_output_file_path = output_file_path + to_string(current_batch);
-    // std::cout << "Printing to file : " << curr_output_file_path << "\n";
+    std::cout << "Printing to file : " << curr_output_file_path << "\n";
     ofstream output_file;
     output_file.open(curr_output_file_path, ios::out);
     output_file << fixed;

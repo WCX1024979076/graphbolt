@@ -737,13 +737,13 @@ public:
     for (int iter = 1; iter < graphbolt_iterations; iter++) {
 #else
     for (int iter = 1; iter < max_iterations; iter++) {
-#endif
       // Perform switch if needed
       if (should_switch_now) { //切换到传统增量计算模型?
         converged_iteration = performSwitch(iter);
         break;
       }
-      
+#endif
+
       // initialize timers
       {
         iteration_timer.start();
@@ -1071,7 +1071,11 @@ public:
       iteration_time += iteration_timer.stop();
     }
 #ifdef MECHINE_ITER
-    performSwitchInc(graphbolt_iterations, edge_additions, edge_deletions);
+    if (should_switch_now) { //切换到传统增量计算模型?
+        converged_iteration = performSwitch(graphbolt_iterations);
+    } else {
+        performSwitchInc(graphbolt_iterations, edge_additions, edge_deletions);
+    }
 #endif
 
     cout << "Finished batch : " << full_timer.stop() << "\n";

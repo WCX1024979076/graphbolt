@@ -1,9 +1,9 @@
 PWD             = $(shell pwd)
 FILE_NAME       = rmat
-BATCH_SIZE      = 100000
-BATCH_TIME      = 10
-SNAP_VERTEX_NUM = 750000
-SNAP_EDGE_NUM   = 4194304
+BATCH_SIZE      = 100
+BATCH_TIME      = 1
+SNAP_VERTEX_NUM = 100
+SNAP_EDGE_NUM   = 1000
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE  = 0.7
 OUTPUT_STD      = ~/tmp/output_std/pr_output
@@ -17,7 +17,7 @@ tools  = $(PWD)/tools
 inputs = $(PWD)/inputs
 apps   = $(PWD)/apps
 
-.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT
+.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT PageRankDelta PageRankTrad PageRankAe PageRankTegra PageRankMechine
 
 export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG
 
@@ -32,6 +32,21 @@ PageRank :
 
 PRCompare :
 	$(MAKE) -C $(tools)/output_comparators PRCompare
+
+PageRankDelta :
+	$(MAKE) -C $(apps) PageRankRunDelta
+
+PageRankTrad :
+	$(MAKE) -C $(apps) PageRankRunTrad
+
+PageRankAe :
+	$(MAKE) -C $(apps) PageRankRunAe
+
+PageRankTegra:
+	$(MAKE) -C $(apps) PageRankRunTegra
+
+PageRankMechine:
+	$(MAKE) -C $(apps) PageRankRunMechine
 
 PageRankRuns :
 	$(MAKE) -C $(apps) PageRankRuns
