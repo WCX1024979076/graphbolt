@@ -8,8 +8,8 @@
 #include <cstring>
 #include <unistd.h>
 
-#define ITER_NUM 50
-#define BATCH_TIME 10
+#define ITER_NUM 20
+#define BATCH_TIME 1
 char name[100];
 
 double *read_data()
