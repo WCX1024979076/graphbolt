@@ -287,7 +287,8 @@ void printAdditionalData(ofstream &output_file, const uintV &v,
 // ======================================================================
 template <class vertex> void compute(graph<vertex> &G, commandLine config) { //计算函数
   uintV n = G.n;
-  int max_iters = config.getOptionLongValue("-maxIters", 20); //TODO 20 or 30 or 10
+  int max_iters = config.getOptionLongValue("-maxIters", 20);
+  int graphbolt_iters = config.getOptionLongValue("-graphboltIters", 5);
   double epsilon = config.getOptionDoubleValue("-epsilon", 0.0000001d);
   max_iters += 1;
   double damping = 0.85;
@@ -296,7 +297,7 @@ template <class vertex> void compute(graph<vertex> &G, commandLine config) { //�
 
   cout << "Initializing engine ....\n";
   GraphBoltEngineSimple<vertex, double, double, PageRankInfo<vertex>> engine(
-      G, max_iters, global_info, false, config);
+      G, max_iters, global_info, false, config, graphbolt_iters);
   engine.init();
   cout << "Finished initializing engine\n";
 

@@ -262,6 +262,7 @@ public:
 
   // TODO: Currently, history_iterations = max_iterations
   int max_iterations;
+  int graphbolt_iterations;
   int history_iterations;
   int converged_iteration;
   bool use_lock;
@@ -270,6 +271,7 @@ public:
 
   // Dependency information
   AggregationValueType **aggregation_values;
+  AggregationValueType *aggregation_values_tmp;
   VertexValueType **vertex_values;
 
   // Current graph
@@ -293,6 +295,9 @@ public:
   bool *frontier_curr;
   bool *frontier_next;
   bool *changed;
+#ifdef MECHINE_ITER
+  bool *changedTegra;
+#endif
   bool *retract;
   bool *propagate;
 
@@ -309,12 +314,12 @@ public:
   // ======================================================================
   GraphBoltEngine(graph<vertex> &_my_graph, int _max_iter,
                   GlobalInfoType &_global_info, bool _use_lock,
-                  commandLine _config)
+                  commandLine _config, int _graphbolt_iter)
       : my_graph(_my_graph), max_iterations(_max_iter),
         history_iterations(_max_iter), converged_iteration(0),
         global_info(_global_info), use_lock(_use_lock), global_info_old(),
         config(_config), ingestor(_my_graph, _config), current_batch(0),
-        adaptive_executor(history_iterations) {
+        adaptive_executor(history_iterations), graphbolt_iterations(_graphbolt_iter) {
     n = my_graph.n;
     n_old = 0;
     if (use_lock) {
@@ -368,25 +373,50 @@ public:
   // DEPENDENCY DATA STORAGE
   // ======================================================================
   void createDependencyData() {
-    aggregation_values = newA(AggregationValueType *, history_iterations);
     vertex_values = newA(VertexValueType *, history_iterations);
     for (int i = 0; i < history_iterations; i++) {
-      aggregation_values[i] = newA(AggregationValueType, n);
       vertex_values[i] = newA(VertexValueType, n);
+    }
+#ifdef MECHINE_ITER
+    aggregation_values_tmp = newA(AggregationValueType, n);
+    aggregation_values = newA(AggregationValueType *, graphbolt_iterations);
+    for(int i = 0; i < graphbolt_iterations; i++) {   
+#else
+    aggregation_values_tmp = newA(AggregationValueType, n);
+    aggregation_values = newA(AggregationValueType *, history_iterations);
+    for (int i = 0; i < history_iterations; i++) { 
+#endif
+      aggregation_values[i] = newA(AggregationValueType, n);
     }
   }
   void resizeDependencyData() {
     for (int i = 0; i < history_iterations; i++) {
+      vertex_values[i] = renewA(VertexValueType, vertex_values[i], n);
+    }
+#ifdef MECHINE_ITER
+    aggregation_values_tmp = renewA(AggregationValueType, aggregation_values_tmp, n);
+    for (int i = 0; i < graphbolt_iterations; i++) {
+#else
+    aggregation_values_tmp = renewA(AggregationValueType, aggregation_values_tmp, n);
+    for (int i = 0; i < history_iterations; i++) {
+#endif
       aggregation_values[i] =
           renewA(AggregationValueType, aggregation_values[i], n);
-      vertex_values[i] = renewA(VertexValueType, vertex_values[i], n);
     }
     initDependencyData(n_old, n);
   }
   void freeDependencyData() {
     for (int i = 0; i < history_iterations; i++) {
-      deleteA(aggregation_values[i]);
       deleteA(vertex_values[i]);
+    }
+#ifdef MECHINE_ITER
+    deleteA(aggregation_values_tmp);
+    for(int i = 0; i < graphbolt_iterations; i++) {
+#else
+    deleteA(aggregation_values_tmp);
+    for (int i = 0; i < history_iterations; i++) {
+#endif
+      deleteA(aggregation_values[i]);
     }
     deleteA(aggregation_values);
     deleteA(vertex_values);
@@ -395,13 +425,30 @@ public:
   void initDependencyData(long start_index, long end_index) {
     for (int iter = 0; iter < history_iterations; iter++) {
       parallel_for(long v = start_index; v < end_index; v++) {
-        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
-            v, aggregation_values[iter][v], global_info);
         initializeVertexValue<VertexValueType, GlobalInfoType>(
             v, vertex_values[iter][v], global_info);
       }
     }
+#ifdef MECHINE_ITER
+    parallel_for(long v = start_index; v < end_index; v++) {
+        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
+            v, aggregation_values_tmp[v], global_info);
+    }
+    for(int iter = 0; iter < graphbolt_iterations; iter++) {
+#else
+    parallel_for(long v = start_index; v < end_index; v++) {
+        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
+            v, aggregation_values_tmp[v], global_info);
+    }
+    for (int iter = 0; iter < history_iterations; iter++) {
+#endif
+      parallel_for(long v = start_index; v < end_index; v++) {
+        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
+            v, aggregation_values[iter][v], global_info);
+      }
+    }
   }
+
 
   // ======================================================================
   // TEMPORARY STRUCTURES USED BY THE BSP ENGINE
@@ -452,6 +499,9 @@ public:
     frontier_curr = newA(bool, n);
     frontier_next = newA(bool, n);
     changed = newA(bool, n);
+#ifdef MECHINE_ITER
+    changedTegra = newA(bool, n);
+#endif
     retract = newA(bool, n);
     propagate = newA(bool, n);
   }
@@ -460,6 +510,9 @@ public:
     frontier_curr = renewA(bool, frontier_curr, n);
     frontier_next = renewA(bool, frontier_next, n);
     changed = renewA(bool, changed, n);
+#ifdef MECHINE_ITER
+    changedTegra = renewA(bool, changed, n);
+#endif
     retract = renewA(bool, retract, n);
     propagate = renewA(bool, propagate, n);
     initVertexSubsets(n_old, n);
@@ -469,6 +522,9 @@ public:
     deleteA(frontier_curr);
     deleteA(frontier_next);
     deleteA(changed);
+#ifdef MECHINE_ITER
+    deleteA(changedTegra);
+#endif
     deleteA(retract);
     deleteA(propagate);
   }
@@ -479,6 +535,9 @@ public:
       frontier_curr[j] = 0;
       frontier_next[j] = 0;
       changed[j] = 0;
+#ifdef MECHINE_ITER
+      changedTegra[j] = 0;
+#endif
       retract[j] = 0;
       propagate[j] = 0;
     }
@@ -559,7 +618,7 @@ public:
       deltaCompute(edge_additions, edge_deletions);
 #elif defined(tegra_calc)
       log_to_file("tegra_calc_start\n");
-      tegraCompute(edge_additions, edge_deletions);
+      tegraCompute(int(1), edge_additions, edge_deletions);
 #else
       log_to_file("trad_calc_start\n");
       initialCompute();
@@ -596,7 +655,7 @@ public:
   virtual void deltaCompute(edgeArray &edge_additions,
                             edgeArray &edge_deletions) = 0;
   
-  virtual void tegraCompute(edgeArray &edge_additions,
+  virtual void tegraCompute(int start_iteration, edgeArray &edge_additions,
                             edgeArray &edge_deletions) = 0;
   // ======================================================================
   // ADAPTIVE SWITCHING TO TRADITIONAL INCREMENTAL COMPUTATION
@@ -644,12 +703,20 @@ public:
 
       } else {
         frontier_curr[v] = 0;
+        //source_change_in_contribution[v] = vertexValueIdentity<VertexValueType>();
       }
       frontier_next[v] = 0;
     }
     cout << "*\n";
 
     return traditionalIncrementalComputation(iter);
+  }
+
+  int performSwitchInc(int iter, edgeArray &edge_additions, edgeArray &edge_deletions) {
+    // If called at beginning of iteration, use iter-1 and iter-2 to decide
+    // whether a vertex is active
+    tegraCompute(iter, edge_additions, edge_deletions);
+    return 1;
   }
 };
 
