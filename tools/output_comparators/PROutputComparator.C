@@ -115,11 +115,11 @@ int parallel_main(int argc, char *argv[]) {
   //   cout << setprecision(VAL_PRECISION2);
 
   if (nChars1 != nChars2) {
-    "WARNING: Number of characters in both files not equal\n";
+    cout << "WARNING: Number of characters in both files not equal\n";
   }
 
   if (nWords1 != nWords2) {
-    "ERROR: Number of words in both files not equal\n";
+    cout << "ERROR: Number of words in both files not equal\n";
     W1.del();
     W2.del();
     exit(1);

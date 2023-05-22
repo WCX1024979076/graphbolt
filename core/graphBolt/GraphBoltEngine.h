@@ -613,7 +613,7 @@ public:
       // ingestor.edge_additions and ingestor.edge_deletions have been added
       // to the graph datastructure. Now, refine using it.
 
-#ifdef delta_calc
+#if defined(delta_calc) || defined(MECHINE_ITER)
       log_to_file("graphbolt_calc_start\n");
       deltaCompute(edge_additions, edge_deletions);
 #elif defined(tegra_calc)

@@ -92,7 +92,7 @@ public:
 
         long edges_to_process = sequence::plusReduceDegree(my_graph.V, frontier_curr_vs.d, (long)my_graph.n);
         log_to_file("tradtional iter = ", iter);
-        // cout << "tradtional iter = "<< iter << endl;
+        cout << "tradtional iter = "<< iter << endl;
         // notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", edges_to_process = " << edges_to_process << ", ";
 
         adaptive_executor.updateApproximateTimeForEdges(edges_to_process);
@@ -772,7 +772,7 @@ public:
         }
       }
       log_to_file("delta iter = ", iter);
-      // cout << "GraphBolt iter = "<< iter << endl;
+      cout << "GraphBolt iter = "<< iter << endl;
       // notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
       copy_time += phase_timer.next();
       // ========== EDGE COMPUTATION - aggregation_values ========== 计算新的权值贡献

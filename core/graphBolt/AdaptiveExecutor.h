@@ -167,7 +167,7 @@ public:
     }
     edge_map_slope = sum_top / sum_bottom;
     edge_map_intercept = avg_edge_map_time - edge_map_slope * avg_active_edges;
-
+/*
     ofstream notes_file;
     notes_file.open(notes_time_file, ios::out | ios::app);
     for (int i = 1; i <= converged_iteration; i++) { 
@@ -181,6 +181,7 @@ public:
     notes_file << endl;
     notes_file.close();
     print();
+*/
   }
 
   void print() {
