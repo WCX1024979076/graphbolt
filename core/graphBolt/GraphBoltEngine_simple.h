@@ -91,7 +91,7 @@ public:
         }
 
         long edges_to_process = sequence::plusReduceDegree(my_graph.V, frontier_curr_vs.d, (long)my_graph.n);
-        log_to_file("tradtional iter = ", iter);
+        // log_to_file("tradtional iter = ", iter);
         cout << "tradtional iter = "<< iter << endl;
         // notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", edges_to_process = " << edges_to_process << ", ";
 
@@ -395,7 +395,7 @@ public:
         converged_iteration = performSwitch(iter);
         break;
       }
-      log_to_file("tegra iter = ", iter);
+      // log_to_file("tegra iter = ", iter);
       cout << "Tegra iter = "<< iter << endl;
 
       parallel_for(uintV v = 0; v < n; v++) {
@@ -437,13 +437,21 @@ public:
           });
         }
       }
-      
+
       parallel_for(uintV u = 0; u < n; u++) { 
         if(frontier_curr[u]) {
           VertexValueType new_value;
           computeFunction(u, aggregation_values_tmp[u],
               vertex_values[iter - 1][u], new_value, global_info);
-          if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info)) && (notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
+          if(notDelZero(new_value, vertex_values[iter][u], global_info_old)) {
+#ifdef MECHINE_ITER
+            changedTegra[u] = 1;
+#else
+            changed[u] = 1;
+#endif
+          }
+
+          if(notDelZero(new_value, vertex_values[iter - 1][u], global_info)) {
             vertex_values[iter][u] = new_value;
             frontier_next[u] = 1;
             intE outDegree = my_graph.V[u].getOutDegree();
@@ -451,34 +459,6 @@ public:
               uintV v = my_graph.V[u].getOutNeighbor(i);
               frontier_next[v] = 1;
             });
-#ifdef MECHINE_ITER
-            changedTegra[u] = 1;
-#else
-            changed[u] = 1;
-#endif
-          } else if ((notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
-              vertex_values[iter][u] = vertex_values[iter - 1][u];
-              frontier_next[u] = 1;
-              intE outDegree = my_graph.V[u].getOutDegree();
-              granular_for(i, 0, outDegree, (outDegree > 1024), {
-                uintV v = my_graph.V[u].getOutNeighbor(i);
-                frontier_next[v] = 1;
-              });
-#ifdef MECHINE_ITER
-              changedTegra[u] = 1;
-#else
-              changed[u] = 1;
-#endif
-          } else if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info))) {
-              vertex_values[iter][u] = new_value;
-              frontier_next[u] = 1;
-              intE outDegree = my_graph.V[u].getOutDegree();
-              granular_for(i, 0, outDegree, (outDegree > 1024), {
-                uintV v = my_graph.V[u].getOutNeighbor(i);
-                frontier_next[v] = 1;
-              });
-          } else {
-            vertex_values[iter][u] = vertex_values[iter - 1][u];
           }
 #ifdef MECHINE_ITER
         } else if(changedTegra[u]) {
@@ -547,19 +527,6 @@ public:
     cout << "tegra calc end" << endl;
     printOutput();
     log_to_file("\n");
-    // for(int i = 0; i <= converged_iteration; i++)
-    // {
-    //   for(uintV u = 0; u < n; u++)
-    //   {
-    //     cout << vertex_values[i][u] << " ";
-    //   }
-    //   cout << endl;
-    // }
-    // for(uintV u = 0; u < n; u++) 
-    // {
-    //   cout << "u:" << u <<endl;
-    //   printHistory(u, aggregation_values, vertex_values, global_info, max_iterations);
-    // }
   }
 
   // ======================================================================
