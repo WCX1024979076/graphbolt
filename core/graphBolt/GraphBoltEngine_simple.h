@@ -920,13 +920,17 @@ public:
           } 
 
           if (iter == graphbolt_iterations - 1) {
-            aggregation_values_tmp[v] = aggregation_values[iter][v];
-              if ((notDelZero(vertex_values[iter][v], vertex_value_old_next[v], global_info_old))) {
-                frontier_curr[v] = 1;
-              }
+            if ((notDelZero(vertex_values[iter][v], vertex_value_old_next[v], global_info_old))) {
+              frontier_curr[v] = 1;
+            }
           }
 #endif
         }
+#ifdef MECHINE_ITER
+        if (iter == graphbolt_iterations - 1) {
+          aggregation_values_tmp[v] = aggregation_values[iter][v];
+        }
+#endif
       }
       //cout << " changedTegra " << changedTegra[45929] << endl;
       phase_time = phase_timer.next();

@@ -60,6 +60,9 @@ PageRankRunTrad: PageRankTrad
 PageRankRunAe: PageRankAe
 	taskset -c $(CORE_LIST) ./PageRankAe -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
+PageRankRunTegra: PageRankTegra
+	taskset -c $(CORE_LIST) ./PageRankTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+
 PageRankRunMechine: PageRankMechine
 	taskset -c $(CORE_LIST) ./PageRankMechine -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 

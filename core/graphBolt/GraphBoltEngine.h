@@ -612,8 +612,15 @@ public:
       edgeArray &edge_deletions = ingestor.getEdgeDeletions();
       // ingestor.edge_additions and ingestor.edge_deletions have been added
       // to the graph datastructure. Now, refine using it.
-
-#if defined(delta_calc) || defined(MECHINE_ITER)
+#ifdef MECHINE_ITER
+      if(graphbolt_iterations == 0) {
+        log_to_file("trad_calc_start\n");
+        initialCompute();
+      } else {
+        log_to_file("graphbolt_calc_start\n");
+        deltaCompute(edge_additions, edge_deletions);
+      }
+#elif defined(delta_calc)
       log_to_file("graphbolt_calc_start\n");
       deltaCompute(edge_additions, edge_deletions);
 #elif defined(tegra_calc)
@@ -621,7 +628,6 @@ public:
       tegraCompute(int(1), edge_additions, edge_deletions);
 #else
       log_to_file("trad_calc_start\n");
-      initialCompute();
 #endif
 
     }
