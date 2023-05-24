@@ -1,10 +1,13 @@
-FILE_NAME = WebGoogle
-BATCH_SIZE = 1000000
-BATCH_TIME = 1
+FILE_NAME       = rmat
+BATCH_SIZE      = 100000
+BATCH_TIME      = 1
+SNAP_VERTEX_NUM = 32768
+SNAP_EDGE_NUM   = 524288
+
 OUTPUT_STD = ~/tmp/output_std/pr_output
 OUTPUT     = ~/tmp/output1/pr_output
 DIFF			 = ~/tmp/diff/pr_output
-CORE_NUM   = 4
+CORE_NUM   = 52
 
 tools = ./tools
 inputs = ./inputs

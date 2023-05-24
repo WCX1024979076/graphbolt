@@ -53,9 +53,10 @@ PageRankTegra :  PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 clean :
 	rm -f *.o *.obj $(ALL)
 
-PageRankRun : PageRank
-	# taskset -c $(CORE_LIST) 
-	./PageRank -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+PageRankRun : PageRankTegra PageRankDelta PageRankTrad
+	taskset -c $(CORE_LIST) ./PageRankTegra -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRankDelta -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRankTrad -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
 PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
 	@if test -e /home/wangcx/tmp/notes.txt ; \
