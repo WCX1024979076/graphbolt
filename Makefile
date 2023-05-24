@@ -1,9 +1,9 @@
 PWD             = $(shell pwd)
 FILE_NAME       = rmat
-BATCH_SIZE      = 100000
+BATCH_SIZE      = 1048576
 BATCH_TIME      = 1
-SNAP_VERTEX_NUM = 32768
-SNAP_EDGE_NUM   = 524288
+SNAP_VERTEX_NUM = 65536
+SNAP_EDGE_NUM   = 2097152
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE  = 0.7
 OUTPUT_STD      = ~/tmp/output_std/pr_output
