@@ -1,9 +1,9 @@
 PWD             = $(shell pwd)
 FILE_NAME       = rmat
-BATCH_SIZE      = 500000
+BATCH_SIZE      = 100000
 BATCH_TIME      = 1
-SNAP_VERTEX_NUM = 10000
-SNAP_EDGE_NUM   = 1000000
+SNAP_VERTEX_NUM = 32768
+SNAP_EDGE_NUM   = 524288
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE  = 0.7
 OUTPUT_STD      = ~/tmp/output_std/pr_output
@@ -17,7 +17,7 @@ tools  = $(PWD)/tools
 inputs = $(PWD)/inputs
 apps   = $(PWD)/apps
 
-.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT PageRankDelta PageRankTrad PageRankAe PageRankTegra PageRankMechine
+.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT PageRankDelta PageRankTrad PageRankAe PageRankTegra PageRankMechine AutoRun
 
 export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG
 
@@ -90,6 +90,9 @@ DEL_NOTES_TXT:
 
 RunAll: RMAT_Generator Generator Snap2Adj PageRankRuns ANALYSIS
 	echo "finish"
+
+AutoRun: RMAT_Generator Generator Snap2Adj PageRankDelta PageRankTrad PageRankTegra
+	echo "AutoRun finish"
 
 RunPy:
 	for i in {1..100}; do \

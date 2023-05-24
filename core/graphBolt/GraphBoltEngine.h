@@ -628,6 +628,7 @@ public:
       tegraCompute(int(1), edge_additions, edge_deletions);
 #else
       log_to_file("trad_calc_start\n");
+      initialCompute();
 #endif
 
     }

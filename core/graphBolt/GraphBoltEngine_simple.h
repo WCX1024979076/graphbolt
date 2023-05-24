@@ -695,11 +695,6 @@ public:
       should_switch_now = true;
     }
 
-//#ifdef MECHINE_ITER
-    //if(graphbolt_iterations == 0)
-     // should_switch_now = true;
-//#endif
-
 #ifdef MECHINE_ITER
     for (int iter = 1; iter < graphbolt_iterations; iter++) {
 #else
@@ -738,7 +733,7 @@ public:
           break;
         }
       }
-      log_to_file("delta iter = ", iter);
+      // log_to_file("delta iter = ", iter);
       cout << "GraphBolt iter = "<< iter << endl;
       // notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
       copy_time += phase_timer.next();
