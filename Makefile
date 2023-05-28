@@ -57,24 +57,13 @@ RMAT_Generator:
 ANALYSIS:
 	$(MAKE) -C $(tools)/analysis run
 
-XGB_TRAIN:
-	$(MAKE) -C $(tools)/mechine_xgb TRAIN
-
-XGB_EVAL:
-	$(MAKE) -C $(tools)/mechine_xgb EVAL
-
-SVM_TRAIN:
-	$(MAKE) -C $(tools)/mechine_svm TRAIN
-
-SVM_EVAL:
-	$(MAKE) -C $(tools)/mechine_svm EVAL
-
 RF_TRAIN:
 	$(MAKE) -C $(tools)/mechine_rf TRAIN
 	
 RF_PREDICT:
 	$(MAKE) -C $(tools)/mechine_rf PREDICT
 	$(eval GRAPHBOLT_ITER := $(shell python3 ./tools/mechine_rf/predict.py $(BATCH_SIZE) $(SNAP_VERTEX_NUM) $(SNAP_EDGE_NUM) $(BATCH_ADD_RATE) $(DEGREE_AVG)))
+	@echo "GRAPHBOLT_ITER = "  $(GRAPHBOLT_ITER)
 
 RF_EVAL:
 	$(MAKE) -C $(tools)/mechine_rf EVAL

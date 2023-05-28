@@ -28,11 +28,11 @@ rf_model = RandomForestRegressor(n_estimators=100, max_depth=10)
 rf_model.fit(X_train, y_train)
 
 # 预测迭代次数
-predicted_prices = rf_model.predict(X_test)
+predicted_graphbolt_iter = rf_model.predict(X_test)
 
 # 计算MSE和R²指标
-mse = mean_squared_error(y_test, predicted_prices)
-r2 = r2_score(y_test, predicted_prices)
+mse = mean_squared_error(y_test, predicted_graphbolt_iter)
+r2 = r2_score(y_test, predicted_graphbolt_iter)
 
 print("均方误差(MSE)：", mse)
 print("决定系数(R²)：", r2)
@@ -41,7 +41,7 @@ for i in y_test:
   print("%02d" % i ,end = " ")
 
 print()
-for i in predicted_prices :
+for i in predicted_graphbolt_iter :
   if i <= 0 :
     print("%02d" % i, end = " ")
   else :

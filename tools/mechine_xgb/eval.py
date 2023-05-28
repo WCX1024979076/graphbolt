@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
 # TODO 归一化 特征变化较大
 
@@ -16,7 +17,7 @@ data = pd.read_csv(csv_path)
 features = data.drop('graphbolt_iter', axis=1)
 target = data['graphbolt_iter']
 
-scaler = MinMaxScaler()
+scaler = StandardScaler()
 features = scaler.fit_transform(features)
 
 # 准备数据
