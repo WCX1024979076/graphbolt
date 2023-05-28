@@ -2,7 +2,7 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error
 import pandas as pd
 
-csv_path = '/home/wangcx/tmp/result.csv'
+csv_path = '/home/wangcx/tmp/result_end.csv'
 # 导入数据集
 data = pd.read_csv(csv_path)
 X, y = data.iloc[:,:-1],data.iloc[:,-1]

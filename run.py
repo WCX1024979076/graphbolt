@@ -9,12 +9,12 @@ BATCH_ADD_RATE = 0
 BATCH_TIME = 1
 DEGREE_AVG = 16
 
-BATCH_SIZE_ARR = [10, 100, 1000, 10000, 100000, 1000000]
-SNAP_VERTEX_NUM_ARR =  [1 << 16, 1 << 17, 1 << 18, 1 << 19, 1 << 20, 1 << 21, 1 << 22, 1 << 23, 1 << 24, 1 << 25]
-# SNAP_EDGE_NUM_ARR =  DEGREE_AVG * SNAP_VERTEX_NUM
+BATCH_SIZE_ARR = [10, 100, 1000, 10000, 100000, 500000, 1000000]
+SNAP_VERTEX_NUM_ARR =  [1 << 16, 1 << 17, 1 << 18, 1 << 19, 1 << 20, 1 << 21]
+DEGREE_AVG_ARR = range(8, 15)
 BATCH_ADD_RATE_ARR = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
-def makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TIME) :
+def makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TIME, DEGREE_AVG) :
   if int(SNAP_EDGE_NUM * BASE_GRAPH_RATE) + int(BATCH_SIZE * BATCH_ADD_RATE) > SNAP_EDGE_NUM :
     return
   
@@ -32,12 +32,12 @@ def makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TI
   print("BASE_GRAPH_RATE =", BASE_GRAPH_RATE)
   print("BATCH_ADD_RATE =", BATCH_ADD_RATE)
 
-  if os.path.exists("/home/wangcx/tmp/notes.txt"):
-    os.remove("/home/wangcx/tmp/notes.txt")
+  if os.path.exists("/home/wangcx/tmp/notes10.txt"):
+    os.remove("/home/wangcx/tmp/notes10.txt")
   else:
     print("The file does not exist")
   
-  with open('/home/wangcx/tmp/notes.txt', 'a') as the_file:
+  with open('/home/wangcx/tmp/notes10.txt', 'a') as the_file:
     the_file.write("BATCH_SIZE = " + str(BATCH_SIZE) + "\n")
     the_file.write("SNAP_VERTEX_NUM = " + str(SNAP_VERTEX_NUM) + "\n")
     the_file.write("SNAP_EDGE_NUM = " + str(SNAP_EDGE_NUM) + "\n")
@@ -57,4 +57,6 @@ def makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TI
 for n_1 in BATCH_SIZE_ARR :
   for n_2 in SNAP_VERTEX_NUM_ARR :
     for n_3 in BATCH_ADD_RATE_ARR :
-      makerun(n_1, n_2, DEGREE_AVG * n_2, n_3, BATCH_TIME)
+      for n_4 in DEGREE_AVG_ARR :
+        makerun(n_1, n_2, n_4 * n_2, n_3, BATCH_TIME, n_4)
+        # exit(1)

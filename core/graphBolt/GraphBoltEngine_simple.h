@@ -396,7 +396,6 @@ public:
         break;
       }
       // log_to_file("tegra iter = ", iter);
-      cout << "Tegra iter = "<< iter << endl;
 
       parallel_for(uintV v = 0; v < n; v++) {
         if (frontier_curr[v]) {
@@ -443,15 +442,7 @@ public:
           VertexValueType new_value;
           computeFunction(u, aggregation_values_tmp[u],
               vertex_values[iter - 1][u], new_value, global_info);
-          if(notDelZero(new_value, vertex_values[iter][u], global_info_old)) {
-#ifdef MECHINE_ITER
-            changedTegra[u] = 1;
-#else
-            changed[u] = 1;
-#endif
-          }
-
-          if(notDelZero(new_value, vertex_values[iter - 1][u], global_info)) {
+          if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info)) && (notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
             vertex_values[iter][u] = new_value;
             frontier_next[u] = 1;
             intE outDegree = my_graph.V[u].getOutDegree();
@@ -459,6 +450,34 @@ public:
               uintV v = my_graph.V[u].getOutNeighbor(i);
               frontier_next[v] = 1;
             });
+#ifdef MECHINE_ITER
+            changedTegra[u] = 1;
+#else
+            changed[u] = 1;
+#endif
+          } else if ((notDelZero(new_value, vertex_values[iter][u], global_info_old))) {
+              vertex_values[iter][u] = vertex_values[iter - 1][u];
+              frontier_next[u] = 1;
+              intE outDegree = my_graph.V[u].getOutDegree();
+              granular_for(i, 0, outDegree, (outDegree > 1024), {
+                uintV v = my_graph.V[u].getOutNeighbor(i);
+                frontier_next[v] = 1;
+              });
+#ifdef MECHINE_ITER
+              changedTegra[u] = 1;
+#else
+              changed[u] = 1;
+#endif
+          } else if ((notDelZero(new_value, vertex_values[iter - 1][u], global_info))) {
+              vertex_values[iter][u] = new_value;
+              frontier_next[u] = 1;
+              intE outDegree = my_graph.V[u].getOutDegree();
+              granular_for(i, 0, outDegree, (outDegree > 1024), {
+                uintV v = my_graph.V[u].getOutNeighbor(i);
+                frontier_next[v] = 1;
+              });
+          } else {
+            vertex_values[iter][u] = vertex_values[iter - 1][u];
           }
 #ifdef MECHINE_ITER
         } else if(changedTegra[u]) {
@@ -523,7 +542,6 @@ public:
         }
       }
     }
-
     cout << "tegra calc end" << endl;
     printOutput();
     log_to_file("\n");
@@ -876,7 +894,7 @@ public:
                                   global_info_old);
           }
 
-#ifdef MECHINE_ITER
+#ifdef MECHINE_ITER //TODO changedTegra frontier_curr_tegra 边算边更新
           if ((notDelZero(vertex_values[iter][v], vertex_value_old_next[v], global_info_old))) {
               changedTegra[v] = 1;  
           } 

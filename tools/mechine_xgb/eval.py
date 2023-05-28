@@ -4,16 +4,20 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import MinMaxScaler
 
 # TODO 归一化 特征变化较大
 
-csv_path = '/home/wangcx/tmp/result.csv'
+csv_path = '/home/wangcx/tmp/result_end_2.csv'
 # 读取数据
 data = pd.read_csv(csv_path)
 
 # 提取特征和目标变量
 features = data.drop('graphbolt_iter', axis=1)
 target = data['graphbolt_iter']
+
+scaler = MinMaxScaler()
+features = scaler.fit_transform(features)
 
 # 准备数据
 X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2)  # 划分训练集和测试集

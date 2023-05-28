@@ -52,7 +52,7 @@ vector<int> debug_vertices = {624};
 #define VAL_PRECISION2 13
 #define PRINT_WIDTH 12
 
-#define NOTES_FILE "/home/wangcx/tmp/notes8.txt"
+#define NOTES_FILE "/home/wangcx/tmp/notes10.txt"
 
 template<typename... Args>
 void log_to_file(Args... args)

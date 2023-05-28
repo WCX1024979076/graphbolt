@@ -4,8 +4,9 @@ import numpy as np
 from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import MinMaxScaler
 
-csv_path = '/home/wangcx/tmp/result.csv'
+csv_path = '/home/wangcx/tmp/result_end_2.csv'
 # 读取数据
 data = pd.read_csv(csv_path)
 
@@ -13,8 +14,12 @@ data = pd.read_csv(csv_path)
 features = data.drop('graphbolt_iter', axis=1)
 target = data['graphbolt_iter']
 
+scaler = MinMaxScaler()
+features = scaler.fit_transform(features)
+
 # 将数据集划分为训练集和测试集
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=143)
+# X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=143)
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2)
 
 # 创建SVM回归模型
 svr_model = SVR(kernel='rbf', gamma=0.0001)
