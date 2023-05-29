@@ -396,6 +396,7 @@ public:
         break;
       }
       // log_to_file("tegra iter = ", iter);
+      cout << "tegra iter = " << iter << endl;
 
       parallel_for(uintV v = 0; v < n; v++) {
         if (frontier_curr[v]) {

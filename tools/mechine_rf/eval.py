@@ -21,7 +21,6 @@ features = scaler.fit_transform(features)
 X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=157)
 
 # 创建随机森林模型
-# rf_model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=157)
 rf_model = RandomForestRegressor(n_estimators=100, max_depth=10)
 
 # 拟合模型

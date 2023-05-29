@@ -1,25 +1,25 @@
 PWD             = $(shell pwd)
-FILE_NAME       = rmat
-BATCH_SIZE      = 500000
+FILE_NAME       = soc-LiveJournal1
+BATCH_SIZE      = 10000000
 BATCH_TIME      = 1
-SNAP_VERTEX_NUM = 875713
-SNAP_EDGE_NUM   = 8105039
+SNAP_VERTEX_NUM = 4847571
+SNAP_EDGE_NUM   = 68993773
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE  = 0.7
 OUTPUT_STD      = ~/tmp/output_std/pr_output
 OUTPUT          = ~/tmp/output1/pr_output
 DIFF            = ~/tmp/diff/pr_output
 CORE_NUM        = 52
-DEGREE_AVG      = 16
-GRAPHBOLT_ITER  = 0
+DEGREE_AVG      = 14
+GRAPHBOLT_ITER  = 20
 
 tools  = $(PWD)/tools
 inputs = $(PWD)/inputs
 apps   = $(PWD)/apps
 
-.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT PageRankDelta PageRankTrad PageRankAe PageRankTegra PageRankMechine AutoRun
+.PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT PageRankDelta PageRankTrad PageRankAe PageRankTegra PageRankMechine AutoRun MechineRun
 
-export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG
+export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG GRAPHBOLT_ITER
 
 Generator :
 	$(MAKE) -C $(tools)/updateGenerator run
@@ -87,3 +87,18 @@ RunPy:
 	for i in {1..100}; do \
 		python3 run.py; \
 	done
+
+MechineRun: Generator RF_PREDICT Snap2Adj 
+	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
+	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
+	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
+	make PageRankDelta
+	make PageRankDelta
+	make PageRankDelta
+	make PageRankTrad
+	make PageRankTrad
+	make PageRankTrad
+	make PageRankTegra
+	make PageRankTegra
+	make PageRankTegra
+	echo "MechineRunOver"

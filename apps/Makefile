@@ -64,7 +64,7 @@ PageRankRunTegra: PageRankTegra
 	taskset -c $(CORE_LIST) ./PageRankTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
 PageRankRunMechine: PageRankMechine
-	taskset -c $(CORE_LIST) ./PageRankMechine -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRankMechine -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) -graphboltIters $(GRAPHBOLT_ITER) ../inputs/$(FILE_NAME)_init.adj
 
 .PHONY : clean PageRankRunDelta PageRankRun PageRankRuns PageRankRunDelta PageRankRunTrad PageRankRunAe PageRankRunMechine PageRankRunTegra
 
