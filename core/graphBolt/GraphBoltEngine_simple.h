@@ -303,19 +303,6 @@ public:
     global_info.processUpdates(edge_additions, edge_deletions);
 #endif
 
-#ifdef MECHINE_ITER
-      parallel_for(uintV v = 0; v < n; v++) {
-      if (frontier_curr[v] == 1) {
-        // frontier_curr[v] = 0;
-        intE outDegree = my_graph.V[v].getOutDegree();
-        granular_for(i, 0, outDegree, (outDegree > 1024), {
-          uintV u = my_graph.V[v].getOutNeighbor(i);
-          frontier_curr[u] = 1;
-        });
-      }
-    }
-#endif
-
     parallel_for(long i = 0; i < edge_additions.size; i++) { 
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
@@ -895,15 +882,9 @@ public:
                                   global_info_old);
           }
 
-#ifdef MECHINE_ITER //TODO changedTegra frontier_curr_tegra 边算边更新
+#ifdef MECHINE_ITER
           if ((notDelZero(vertex_values[iter][v], vertex_value_old_next[v], global_info_old))) {
-              changedTegra[v] = 1;  
-          } 
-
-          if (iter == graphbolt_iterations - 1) {
-            if ((notDelZero(vertex_values[iter][v], vertex_value_old_next[v], global_info_old))) {
-              frontier_curr[v] = 1;
-            }
+              changedTegra[v] = 1;
           }
 #endif
         }
@@ -1059,6 +1040,18 @@ public:
     if (should_switch_now) { //切换到传统增量计算模型?
         converged_iteration = performSwitch(graphbolt_iterations);
     } else {
+        parallel_for(uintV v = 0; v < n; v++) {
+          if (frontier_curr[v] == 1) {
+            intE outDegree = my_graph.V[v].getOutDegree();
+            granular_for(i, 0, outDegree, (outDegree > 1024), {
+              uintV u = my_graph.V[v].getOutNeighbor(i);
+              frontier_curr[u] = 1;
+            });
+          }
+        }
+        parallel_for(uintV v = 0; v < n; v++) {
+          frontier_curr[v] |= changed[v];
+        }
         performSwitchInc(graphbolt_iterations, edge_additions, edge_deletions);
     }
 #endif
