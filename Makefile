@@ -1,9 +1,9 @@
 PWD             = $(shell pwd)
-FILE_NAME       = soc-LiveJournal1
-BATCH_SIZE      = 10000000
+FILE_NAME       = WebGoogle
+BATCH_SIZE      = 500
 BATCH_TIME      = 1
-SNAP_VERTEX_NUM = 4847571
-SNAP_EDGE_NUM   = 68993773
+SNAP_VERTEX_NUM = 875713
+SNAP_EDGE_NUM   = 5105039
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE  = 0.7
 OUTPUT_STD      = ~/tmp/output_std/pr_output
@@ -11,7 +11,7 @@ OUTPUT          = ~/tmp/output1/pr_output
 DIFF            = ~/tmp/diff/pr_output
 CORE_NUM        = 52
 DEGREE_AVG      = 14
-GRAPHBOLT_ITER  = 20
+GRAPHBOLT_ITER  = 0
 
 tools  = $(PWD)/tools
 inputs = $(PWD)/inputs
