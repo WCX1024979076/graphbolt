@@ -500,10 +500,12 @@ public:
   void createVertexSubsets() {
     all = newA(bool, n);
     frontier_curr = newA(bool, n);
+#if defined(MECHINE_ITER) || defined(tegra_calc)
+    frontier_init_tegra = newA(bool, n);
+#endif
 #ifdef MECHINE_ITER
     frontier_curr_tegra = newA(bool, n);
     frontier_next_tegra = newA(bool, n);
-    frontier_init_tegra = newA(bool, n);
 #endif
     frontier_next = newA(bool, n);
     changed = newA(bool, n);
@@ -516,10 +518,12 @@ public:
   void resizeVertexSubsets() {
     all = renewA(bool, all, n);
     frontier_curr = renewA(bool, frontier_curr, n);
+#if defined(MECHINE_ITER) || defined(tegra_calc)
+    frontier_init_tegra = renewA(bool, frontier_init_tegra, n);
+#endif
 #ifdef MECHINE_ITER
     frontier_curr_tegra = renewA(bool, frontier_curr_tegra, n);
     frontier_next_tegra = renewA(bool, frontier_next_tegra, n);
-    frontier_init_tegra = renewA(bool, frontier_init_tegra, n);
 #endif
     frontier_next = renewA(bool, frontier_next, n);
     changed = renewA(bool, changed, n);
@@ -533,13 +537,15 @@ public:
   void freeVertexSubsets() {
     deleteA(all);
     deleteA(frontier_curr);
+#if defined(MECHINE_ITER) || defined(tegra_calc)
+    deleteA(frontier_init_tegra);
+#endif
     deleteA(frontier_next);
     deleteA(changed);
 #ifdef MECHINE_ITER
     deleteA(changedTegra);
     deleteA(frontier_curr_tegra);
     deleteA(frontier_next_tegra);
-    deleteA(frontier_init_tegra);
 #endif
     deleteA(retract);
     deleteA(propagate);
@@ -551,11 +557,13 @@ public:
       frontier_curr[j] = 0;
       frontier_next[j] = 0;
       changed[j] = 0;
+#if defined(MECHINE_ITER) || defined(tegra_calc)
+      frontier_init_tegra[j] = 0;
+#endif
 #ifdef MECHINE_ITER
       changedTegra[j] = 0;
       frontier_curr_tegra[j] = 0;
       frontier_next_tegra[j] = 0;
-      frontier_init_tegra[j] = 0;
 #endif
       retract[j] = 0;
       propagate[j] = 0;
