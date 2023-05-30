@@ -570,6 +570,8 @@ public:
       changed[v] = 0;
 #ifdef MECHINE_ITER
       changedTegra[v] = 0;
+      frontier_curr_tegra[v] = 0;
+      frontier_next_tegra[v] = 0;
 #endif
       vertex_value_old_prev[v] = vertexValueIdentity<VertexValueType>();
       vertex_value_old_curr[v] = vertexValueIdentity<VertexValueType>();
@@ -602,7 +604,13 @@ public:
     parallel_for(long i = 0; i < edge_additions.size; i++) { //增加边处理
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
-
+#ifdef MECHINE_ITER
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr_tegra[v] = 1;
+      });
+#endif
       // Update frontier and changed values
       hasSourceChangedByUpdate(source, edge_addition_enum,
                                frontier_curr[source], changed[source],
@@ -655,7 +663,14 @@ public:
     parallel_for(long i = 0; i < edge_deletions.size; i++) { //删除和增加同理
       uintV source = edge_deletions.E[i].source;
       uintV destination = edge_deletions.E[i].destination;
-
+#ifdef MECHINE_ITER
+      frontier_curr_tegra[destination] = 1;
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr_tegra[v] = 1;
+      });
+#endif
       hasSourceChangedByUpdate(source, edge_deletion_enum,
                                frontier_curr[source], changed[source],
                                global_info, global_info_old);
@@ -908,6 +923,9 @@ public:
 #endif
         }
 #ifdef MECHINE_ITER
+        if(frontier_curr_tegra[v]) {
+          if(notDelZero())
+        }
         if (iter == graphbolt_iterations - 1) {
           aggregation_values_tmp[v] = aggregation_values[iter][v];
         }
@@ -922,7 +940,13 @@ public:
         uintV source = edge_additions.E[i].source;
         uintV destination = edge_additions.E[i].destination;
         AggregationValueType contrib_change;
-
+#ifdef MECHINE_ITER
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr_tegra[v] = 1;
+      });
+#endif
         if (notDelZero(vertex_value_old_curr[source],
                       vertex_value_old_next[source], global_info_old) ||
             (forceActivateVertexForIteration(source, iter + 1,
@@ -970,7 +994,14 @@ public:
         uintV source = edge_deletions.E[i].source;
         uintV destination = edge_deletions.E[i].destination;
         AggregationValueType contrib_change;
-
+#ifdef MECHINE_ITER
+      frontier_curr_tegra[destination] = 1;
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_curr_tegra[v] = 1;
+      });
+#endif
         if (notDelZero(vertex_value_old_curr[source],
                       vertex_value_old_next[source], global_info_old) ||
             (forceActivateVertexForIteration(source, iter + 1,
@@ -1117,6 +1148,10 @@ public:
                         GlobalInfoType>::all;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::frontier_curr;
+  using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
+                        GlobalInfoType>::frontier_curr_tegra;
+  using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
+                        GlobalInfoType>::frontier_next_tegra;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::frontier_next;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,

@@ -293,6 +293,8 @@ public:
   // TODO : Replace with more bitmaps
   bool *all;
   bool *frontier_curr;
+  bool *frontier_curr_tegra;
+  bool *frontier_next_tegra;
   bool *frontier_next;
   bool *changed;
 #ifdef MECHINE_ITER
@@ -497,6 +499,10 @@ public:
   void createVertexSubsets() {
     all = newA(bool, n);
     frontier_curr = newA(bool, n);
+#ifdef MECHINE_ITER
+    frontier_curr_tegra = newA(bool, n);
+    frontier_next_tegra = newA(bool, n);
+#endif
     frontier_next = newA(bool, n);
     changed = newA(bool, n);
 #ifdef MECHINE_ITER
@@ -508,6 +514,10 @@ public:
   void resizeVertexSubsets() {
     all = renewA(bool, all, n);
     frontier_curr = renewA(bool, frontier_curr, n);
+#ifdef MECHINE_ITER
+    frontier_curr_tegra = renewA(bool, frontier_curr_tegra, n);
+    frontier_next_tegra = renewA(bool, frontier_next_tegra, n);
+#endif
     frontier_next = renewA(bool, frontier_next, n);
     changed = renewA(bool, changed, n);
 #ifdef MECHINE_ITER
@@ -524,6 +534,8 @@ public:
     deleteA(changed);
 #ifdef MECHINE_ITER
     deleteA(changedTegra);
+    deleteA(frontier_curr_tegra);
+    deleteA(frontier_next_tegra);
 #endif
     deleteA(retract);
     deleteA(propagate);
@@ -537,6 +549,8 @@ public:
       changed[j] = 0;
 #ifdef MECHINE_ITER
       changedTegra[j] = 0;
+      frontier_curr_tegra[j] = 0;
+      frontier_next_tegra[j] = 0;
 #endif
       retract[j] = 0;
       propagate[j] = 0;
