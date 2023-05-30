@@ -1,17 +1,17 @@
 PWD             = $(shell pwd)
-FILE_NAME       = WebGoogle
-BATCH_SIZE      = 500
+FILE_NAME       = Amazon0601
+BATCH_SIZE      = 1000
 BATCH_TIME      = 1
-SNAP_VERTEX_NUM = 875713
-SNAP_EDGE_NUM   = 5105039
+SNAP_VERTEX_NUM = 403394
+SNAP_EDGE_NUM   = 3387388
 BASE_GRAPH_RATE = 0.5
 BATCH_ADD_RATE  = 0.7
 OUTPUT_STD      = ~/tmp/output_std/pr_output
 OUTPUT          = ~/tmp/output1/pr_output
 DIFF            = ~/tmp/diff/pr_output
 CORE_NUM        = 52
-DEGREE_AVG      = 14
-GRAPHBOLT_ITER  = 0
+DEGREE_AVG      = 8
+GRAPHBOLT_ITER  = 5
 
 tools  = $(PWD)/tools
 inputs = $(PWD)/inputs
