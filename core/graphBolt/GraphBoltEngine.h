@@ -295,6 +295,7 @@ public:
   bool *frontier_curr;
   bool *frontier_curr_tegra;
   bool *frontier_next_tegra;
+  bool *frontier_init_tegra;
   bool *frontier_next;
   bool *changed;
 #ifdef MECHINE_ITER
@@ -502,6 +503,7 @@ public:
 #ifdef MECHINE_ITER
     frontier_curr_tegra = newA(bool, n);
     frontier_next_tegra = newA(bool, n);
+    frontier_init_tegra = newA(bool, n);
 #endif
     frontier_next = newA(bool, n);
     changed = newA(bool, n);
@@ -517,6 +519,7 @@ public:
 #ifdef MECHINE_ITER
     frontier_curr_tegra = renewA(bool, frontier_curr_tegra, n);
     frontier_next_tegra = renewA(bool, frontier_next_tegra, n);
+    frontier_init_tegra = renewA(bool, frontier_init_tegra, n);
 #endif
     frontier_next = renewA(bool, frontier_next, n);
     changed = renewA(bool, changed, n);
@@ -536,6 +539,7 @@ public:
     deleteA(changedTegra);
     deleteA(frontier_curr_tegra);
     deleteA(frontier_next_tegra);
+    deleteA(frontier_init_tegra);
 #endif
     deleteA(retract);
     deleteA(propagate);
@@ -551,6 +555,7 @@ public:
       changedTegra[j] = 0;
       frontier_curr_tegra[j] = 0;
       frontier_next_tegra[j] = 0;
+      frontier_init_tegra[j] = 0;
 #endif
       retract[j] = 0;
       propagate[j] = 0;
