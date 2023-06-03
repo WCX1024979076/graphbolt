@@ -4,7 +4,7 @@ import pickle
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 
-csv_path = '/home/wangcx/tmp/result_end_2.csv'
+csv_path = '/home/wangcx/tmp/result_end_3.csv'
 # 读取数据
 data = pd.read_csv(csv_path)
 

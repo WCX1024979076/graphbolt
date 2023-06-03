@@ -32,12 +32,12 @@ def makerun(BATCH_SIZE, SNAP_VERTEX_NUM, SNAP_EDGE_NUM, BATCH_ADD_RATE, BATCH_TI
   print("BASE_GRAPH_RATE =", BASE_GRAPH_RATE)
   print("BATCH_ADD_RATE =", BATCH_ADD_RATE)
 
-  if os.path.exists("/home/wangcx/tmp/notes10.txt"):
-    os.remove("/home/wangcx/tmp/notes10.txt")
+  if os.path.exists("/home/wangcx/tmp/notes_end.txt"):
+    os.remove("/home/wangcx/tmp/notes_end.txt")
   else:
     print("The file does not exist")
   
-  with open('/home/wangcx/tmp/notes10.txt', 'a') as the_file:
+  with open('/home/wangcx/tmp/notes_end.txt', 'a') as the_file:
     the_file.write("BATCH_SIZE = " + str(BATCH_SIZE) + "\n")
     the_file.write("SNAP_VERTEX_NUM = " + str(SNAP_VERTEX_NUM) + "\n")
     the_file.write("SNAP_EDGE_NUM = " + str(SNAP_EDGE_NUM) + "\n")

@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 # TODO 归一化 特征变化较大
 
-csv_path = '/home/wangcx/tmp/result_end_2.csv'
+csv_path = '/home/wangcx/tmp/result_end_3.csv'
 # 读取数据
 data = pd.read_csv(csv_path)
 

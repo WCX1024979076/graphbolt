@@ -56,13 +56,13 @@ int parallel_main(int argc, char *argv[])
     scanf("DEGREE_AVG = %lld\n", &degree_avg);
 
     FILE *fp1 = freopen("/home/wangcx/tmp/notes_end.txt", "a", stdout), *fp2;
-    if(access("/home/wangcx/tmp/result_end_2.csv", F_OK) != -1)
+    if(access("/home/wangcx/tmp/result_end_3.csv", F_OK) != -1)
     {
-       fp2 = fopen("/home/wangcx/tmp/result_end_2.csv", "a");
+       fp2 = fopen("/home/wangcx/tmp/result_end_3.csv", "a");
     }
     else
     {
-       fp2 = fopen("/home/wangcx/tmp/result_end_2.csv", "a");
+       fp2 = fopen("/home/wangcx/tmp/result_end_3.csv", "a");
        fprintf(fp2, "batch_size,snap_vertex_num,snap_edge_num,batch_add_rate,degree_avg,graphbolt_iter\n");
     }
     printf("BATCH_SIZE = %lld\n", batch_size);
