@@ -641,8 +641,8 @@ public:
       // to the graph datastructure. Now, refine using it.
 #ifdef MECHINE_ITER
       if(graphbolt_iterations == 0) {
-        log_to_file("trad_calc_start\n");
-        initialCompute();
+        log_to_file("tegra_calc_start\n");
+        tegraCompute(int(1), edge_additions, edge_deletions);
       } else {
         log_to_file("graphbolt_calc_start\n");
         deltaCompute(edge_additions, edge_deletions);

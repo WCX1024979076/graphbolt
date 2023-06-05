@@ -892,21 +892,21 @@ public:
 #ifdef MECHINE_ITER
         if (iter == graphbolt_iterations - 1) {
           aggregation_values_tmp[v] = aggregation_values[iter][v];
-        }
-        if(frontier_curr_tegra[v]) {
-          VertexValueType new_value;
-          computeFunction(v, aggregation_values[iter][v],
-              vertex_values[iter - 1][v], new_value, global_info);
-          intE outDegree = my_graph.V[v].getOutDegree();
-          if ((notDelZero(new_value, vertex_values[iter - 1][v], global_info)) || (notDelZero(new_value, vertex_value_old_next[v], global_info_old))) {
-            frontier_next_tegra[v] = 1;
-            granular_for(i, 0, outDegree, (outDegree > 1024), {
-              uintV u = my_graph.V[v].getOutNeighbor(i);
-              frontier_next_tegra[u] = 1;
-            });
+          if(changed[v]) {
+            VertexValueType new_value;
+            computeFunction(v, aggregation_values[iter][v],
+                vertex_values[iter - 1][v], new_value, global_info);
+            intE outDegree = my_graph.V[v].getOutDegree();
+            if ((notDelZero(new_value, vertex_values[iter - 1][v], global_info)) || (notDelZero(new_value, vertex_value_old_next[v], global_info_old))) {
+              frontier_curr_tegra[v] = 1;
+              granular_for(i, 0, outDegree, (outDegree > 1024), {
+                uintV u = my_graph.V[v].getOutNeighbor(i);
+                frontier_curr_tegra[u] = 1;
+              });
+            }
           }
+          frontier_curr_tegra[v] |= frontier_init_tegra[v];
         }
-        frontier_next_tegra[v] |= frontier_init_tegra[v];
 #endif
       }
       //cout << " changedTegra " << changedTegra[45929] << endl;
@@ -1048,22 +1048,16 @@ public:
       }
       misc_time += phase_timer.stop();
       iteration_time += iteration_timer.stop();
-#ifdef MECHINE_ITER
-      parallel_for(uintV u = 0; u < n; u++) {
-        frontier_curr_tegra[u] = frontier_next_tegra[u];
-        frontier_next_tegra[u] = 0;
-      }
-#endif
     }
 #ifdef MECHINE_ITER
-    if (should_switch_now) { //切换到传统增量计算模型?
-        converged_iteration = performSwitch(graphbolt_iterations);
-    } else {
+    // if (should_switch_now) { //切换到传统增量计算模型?
+    //     converged_iteration = performSwitch(graphbolt_iterations);
+    // } else {
       parallel_for(uintV v = 0; v < n; v++) {
         frontier_curr[v] = frontier_curr_tegra[v];
       }
       performSwitchInc(graphbolt_iterations, edge_additions, edge_deletions);
-    }
+    // }
 #endif
 
     cout << "Finished batch : " << full_timer.stop() << "\n";
