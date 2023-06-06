@@ -537,10 +537,10 @@ public:
       frontier_curr[v] = 0;
       frontier_next[v] = 0;
       changed[v] = 0;
+      frontier_next_delta[v] = 0;
 #ifdef MECHINE_ITER
       changedTegra[v] = 0;
       frontier_curr_tegra[v] = 0;
-      frontier_next_tegra[v] = 0;
       frontier_init_tegra[v] = 0;
 #endif
       vertex_value_old_prev[v] = vertexValueIdentity<VertexValueType>();
@@ -582,6 +582,7 @@ public:
         frontier_init_tegra[v] = 1;
       });
 #endif
+      frontier_next_delta[destination] = 1;
       // Update frontier and changed values
       hasSourceChangedByUpdate(source, edge_addition_enum,
                                frontier_curr[source], changed[source],
@@ -593,9 +594,11 @@ public:
 
         if (frontier_curr[source]) {
           changed[source] = true;
+          frontier_next_delta[source] = true;
         }
         if (frontier_curr[destination]) {
           changed[source] = true;
+          frontier_next_delta[source] = true;
         }
 
         AggregationValueType contrib_change; //计算聚合值?
@@ -644,6 +647,7 @@ public:
         frontier_init_tegra[v] = 1;
       });
 #endif
+      frontier_next_delta[destination] = true;
       hasSourceChangedByUpdate(source, edge_deletion_enum,
                                frontier_curr[source], changed[source],
                                global_info, global_info_old);
@@ -654,9 +658,11 @@ public:
         // Update frontier and changed values
         if (frontier_curr[source]) {
           changed[source] = true;
+          frontier_next_delta[source] = true;
         }
         if (frontier_curr[destination]) {
           changed[source] = true;
+          frontier_next_delta[source] = true;
         }
 
         AggregationValueType contrib_change;
@@ -804,6 +810,8 @@ public:
               }
               if (!changed[v])
                 changed[v] = 1;
+              if (!frontier_next_delta[v])
+                frontier_next_delta[v] = 1;
             }
           });
         }
@@ -817,10 +825,12 @@ public:
         frontier_curr[v] = 0;
         if ((v >= n_old) && (changed[v] == false)) {
           changed[v] = forceComputeVertexForIteration(v, iter, global_info);
+          frontier_next_delta[v] = forceComputeVertexForIteration(v, iter, global_info);
         }
 
-        if (changed[v]) {
+        if (frontier_next_delta[v]) {
           frontier_curr[v] = 0;
+          frontier_next_delta[v] = 0;
 
           // delta has the current cumulative change for the vertex.
           // Update the aggregation value in history
@@ -888,6 +898,9 @@ public:
               changedTegra[v] = 1;  
           }
 #endif
+        } else if(changed[v]) {
+          vertex_values[iter][v] = vertex_values[iter - 1][v];
+          aggregation_values[iter][v] = aggregation_values[iter - 1][v];
         }
 #ifdef MECHINE_ITER
         if (iter == graphbolt_iterations - 1) {
@@ -918,6 +931,8 @@ public:
         uintV source = edge_additions.E[i].source;
         uintV destination = edge_additions.E[i].destination;
         AggregationValueType contrib_change;
+        frontier_next_delta[source] = 1;
+        frontier_next_delta[destination] = 1;
         if (notDelZero(vertex_value_old_curr[source],
                       vertex_value_old_next[source], global_info_old) ||
             (forceActivateVertexForIteration(source, iter + 1,
@@ -965,6 +980,8 @@ public:
         uintV source = edge_deletions.E[i].source;
         uintV destination = edge_deletions.E[i].destination;
         AggregationValueType contrib_change;
+        frontier_next_delta[source] = 1;
+        frontier_next_delta[destination] = 1;
         if (notDelZero(vertex_value_old_curr[source],
                       vertex_value_old_next[source], global_info_old) ||
             (forceActivateVertexForIteration(source, iter + 1,
@@ -1138,6 +1155,8 @@ public:
                         GlobalInfoType>::processVertexAddition;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::frontier_init_tegra;
+  using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
+                        GlobalInfoType>::frontier_next_delta;
 #ifdef MECHINE_ITER
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::changedTegra;
@@ -1145,8 +1164,6 @@ public:
                         GlobalInfoType>::performSwitchInc;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::frontier_curr_tegra;
-  using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
-                        GlobalInfoType>::frontier_next_tegra;
 #endif
 };
 #endif

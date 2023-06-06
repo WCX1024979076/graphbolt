@@ -1,6 +1,6 @@
 PWD             = $(shell pwd)
-FILE_NAME       = Amazon0601
-BATCH_SIZE      = 1000000
+FILE_NAME       = Wiki-Vote
+BATCH_SIZE      = 1000
 BATCH_TIME      = 1
 SNAP_VERTEX_NUM = 403394
 SNAP_EDGE_NUM   = 3387388
