@@ -640,6 +640,9 @@ public:
 #ifdef MECHINE_ITER
       if(graphbolt_iterations == 0) {
         log_to_file("tegra_calc_start\n");
+        parallel_for(uintV v = 0; v < n; v++) {
+          frontier_curr[v] = 0;
+        }
         tegraCompute(int(1), edge_additions, edge_deletions);
       } else {
         log_to_file("graphbolt_calc_start\n");
