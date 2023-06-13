@@ -91,9 +91,7 @@ public:
         }
 
         long edges_to_process = sequence::plusReduceDegree(my_graph.V, frontier_curr_vs.d, (long)my_graph.n);
-        // log_to_file("tradtional iter = ", iter);
         cout << "tradtional iter = "<< iter << endl;
-        // notes_file << "tradtional calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", edges_to_process = " << edges_to_process << ", ";
 
         adaptive_executor.updateApproximateTimeForEdges(edges_to_process);
 
@@ -243,11 +241,6 @@ public:
         iteration_time = iteration_timer.stop();
 
         log_to_file(single_calc_timer.next(), " ");
-        // log_to_file(" timer = ", single_time);
-        // log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
-        // log_to_file("\n");
-        // notes_file << "calc_timer = " << single_time << endl;
-        // notes_time << single_time << " " << adaptive_executor.approximateTimeForCurrIter() << endl;
 
         if (ae_enabled && iter == 1) {
           adaptive_executor.setApproximateTimeForCurrIter(iteration_time); //为 CurrIter 设置大概时间
@@ -272,11 +265,9 @@ public:
   // Tegra 增量计算模型
   // ======================================================================
   void tegraCompute(int start_iter, edgeArray &edge_additions, edgeArray &edge_deletions) {
-    //cout << "Tegra calc starter" << endl;
     timer single_calc_timer, full_timer; //计时用
     double iteration_time = 0.0;
     full_timer.start();
-    // cout << n << endl;
 
 #ifndef MECHINE_ITER
     n_old = n;
@@ -336,7 +327,6 @@ public:
       should_switch_now = true;
     }
 #endif
-    // cout << "preparetion time : " << full_timer.next() << "\n";
     for (int iter = start_iter; iter < max_iterations; iter++) {
       single_calc_timer.start();
       if (iter > converged_iteration || should_switch_now) {
@@ -382,8 +372,6 @@ public:
         converged_iteration = performSwitch(iter);
         break;
       }
-      // log_to_file("tegra iter = ", iter);
-      //cout << "Tegra iter = "<< iter << endl;
 
       parallel_for (uintV v = 0; v < n; v++) {
         if (frontier_curr[v]) {
@@ -479,10 +467,7 @@ public:
       }
       log_to_file(iteration_time, " ");
       cout << "iteration_time " << iteration_time << endl;
-      // log_to_file(" timer = ", single_calc_timer.next());
-      // log_to_file("\n");
 
-      //cout << "iter " << iter << ", front_size " << temp_vs.numNonzeros() << endl;
       if(temp_vs.isEmpty()) {
         if (iter == converged_iteration) {
           break;
@@ -501,26 +486,11 @@ public:
     }
     
 #ifndef MECHINE_ITER
-    cout << "tegra calc end" << endl;
     cout << "Finished batch : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << converged_iteration << "\n";
     printOutput();
     log_to_file("\n");
 #endif
-    
-    // for(int i = 0; i <= converged_iteration; i++)
-    // {
-    //   for(uintV u = 0; u < n; u++)
-    //   {
-    //     cout << vertex_values[i][u] << " ";
-    //   }
-    //   cout << endl;
-    // }
-    // for(uintV u = 0; u < n; u++) 
-    // {
-    //   cout << "u:" << u <<endl;
-    //   printHistory(u, aggregation_values, vertex_values, global_info, max_iterations);
-    // }
   }
 
   // ======================================================================
@@ -692,9 +662,6 @@ public:
           break;
         }
       }
-      // log_to_file("delta iter = ", iter);
-      //cout << "GraphBolt iter = "<< iter;
-      // notes_file << "delta calc, iter_num = " << iter << ", front_curr size = " << frontier_curr_vs.numNonzeros() << ", ";
       copy_time += phase_timer.next();
       // ========== EDGE COMPUTATION - aggregation_values ========== 计算新的权值贡献
       if ((use_source_contribution) && (iter == 1)) { //第一次迭代 所有激活得点向邻居发送更新
@@ -812,11 +779,6 @@ public:
                                   global_info_old);
         }
 
-//#ifdef MECHINE_ITER
-        //if (iter == graphbolt_iterations - 1) {
-          //aggregation_values_tmp[v] = aggregation_values[iter][v];//切传统
-        //}
-//#endif
       }
       phase_time = phase_timer.next();
       
@@ -943,7 +905,6 @@ public:
         }
       }
       phase_time = phase_timer.next();
-      //cout << " delta " << delta[11] << endl;
       vertexSubset temp_vs(n, frontier_curr);
       frontier_curr_vs = temp_vs;
 
@@ -952,7 +913,6 @@ public:
       cout << " iter time " << iteration_time << endl;
       log_to_file(iteration_time, " ");
 
-      // notes_file << "calc_timer = " << single_calc_timer.next() << endl;
       // Convergence check
       if (!has_direct_changes && frontier_curr_vs.isEmpty()) {
         // There are no more active vertices
@@ -974,20 +934,12 @@ public:
         iteration_time += pre_compute_time;
       }
 
-      //cout << " iter time " << single_calc_timer.next() << endl;
-      //log_to_file(single_calc_timer.next(), " ");
-      // log_to_file(" timer = ", iteration_time);
-      // log_to_file(" ad_timer = ", adaptive_executor.approximateTimeForCurrIter());
-      // log_to_file("\n");
-      // notes_time << iteration_time << " " << adaptive_executor.approximateTimeForCurrIter() << endl;
- 
       if (ae_enabled && shouldSwitch(iter, iteration_time)) {
         should_switch_now = true;
       }
       misc_time += phase_timer.stop();
       iteration_time += iteration_timer.stop();
     }
-    // cout << "Finished batch graphbolt : " << full_timer.next() << "\n";
 #ifdef MECHINE_ITER
     if (should_switch_now) { //切换到传统增量计算模型
       converged_iteration = performSwitch(graphbolt_iterations);
