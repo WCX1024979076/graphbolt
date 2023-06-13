@@ -293,14 +293,8 @@ public:
   // TODO : Replace with more bitmaps
   bool *all;
   bool *frontier_curr;
-  bool *frontier_curr_tegra;
-  bool *frontier_init_tegra;
   bool *frontier_next;
-  bool *frontier_next_delta;
   bool *changed;
-#ifdef MECHINE_ITER
-  bool *changedTegra;
-#endif
   bool *retract;
   bool *propagate;
 
@@ -380,12 +374,11 @@ public:
     for (int i = 0; i < history_iterations; i++) {
       vertex_values[i] = newA(VertexValueType, n);
     }
-#ifdef MECHINE_ITER
     aggregation_values_tmp = newA(AggregationValueType, n);
+#ifdef MECHINE_ITER
     aggregation_values = newA(AggregationValueType *, graphbolt_iterations);
     for(int i = 0; i < graphbolt_iterations; i++) {   
 #else
-    aggregation_values_tmp = newA(AggregationValueType, n);
     aggregation_values = newA(AggregationValueType *, history_iterations);
     for (int i = 0; i < history_iterations; i++) { 
 #endif
@@ -396,11 +389,10 @@ public:
     for (int i = 0; i < history_iterations; i++) {
       vertex_values[i] = renewA(VertexValueType, vertex_values[i], n);
     }
-#ifdef MECHINE_ITER
     aggregation_values_tmp = renewA(AggregationValueType, aggregation_values_tmp, n);
+#ifdef MECHINE_ITER
     for (int i = 0; i < graphbolt_iterations; i++) {
 #else
-    aggregation_values_tmp = renewA(AggregationValueType, aggregation_values_tmp, n);
     for (int i = 0; i < history_iterations; i++) {
 #endif
       aggregation_values[i] =
@@ -412,11 +404,10 @@ public:
     for (int i = 0; i < history_iterations; i++) {
       deleteA(vertex_values[i]);
     }
-#ifdef MECHINE_ITER
     deleteA(aggregation_values_tmp);
+#ifdef MECHINE_ITER
     for(int i = 0; i < graphbolt_iterations; i++) {
 #else
-    deleteA(aggregation_values_tmp);
     for (int i = 0; i < history_iterations; i++) {
 #endif
       deleteA(aggregation_values[i]);
@@ -432,17 +423,14 @@ public:
             v, vertex_values[iter][v], global_info);
       }
     }
-#ifdef MECHINE_ITER
     parallel_for(long v = start_index; v < end_index; v++) {
         initializeAggregationValue<AggregationValueType, GlobalInfoType>(
             v, aggregation_values_tmp[v], global_info);
     }
+#ifdef MECHINE_ITER
     for(int iter = 0; iter < graphbolt_iterations; iter++) {
 #else
-    parallel_for(long v = start_index; v < end_index; v++) {
-        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
-            v, aggregation_values_tmp[v], global_info);
-    }
+    
     for (int iter = 0; iter < history_iterations; iter++) {
 #endif
       parallel_for(long v = start_index; v < end_index; v++) {
@@ -500,32 +488,14 @@ public:
   void createVertexSubsets() {
     all = newA(bool, n);
     frontier_curr = newA(bool, n);
-    frontier_next_delta = newA(bool, n);
-#if defined(MECHINE_ITER) || defined(tegra_calc)
-    frontier_init_tegra = newA(bool, n);
-#endif
-#ifdef MECHINE_ITER
-    frontier_curr_tegra = newA(bool, n);
-#endif
     frontier_next = newA(bool, n);
     changed = newA(bool, n);
-#ifdef MECHINE_ITER
-    changedTegra = newA(bool, n);
-#endif
     retract = newA(bool, n);
     propagate = newA(bool, n);
   }
   void resizeVertexSubsets() {
     all = renewA(bool, all, n);
     frontier_curr = renewA(bool, frontier_curr, n);
-    frontier_next_delta = renewA(bool, frontier_next_delta, n);
-#if defined(MECHINE_ITER) || defined(tegra_calc)
-    frontier_init_tegra = renewA(bool, frontier_init_tegra, n);
-#endif
-#ifdef MECHINE_ITER
-    frontier_curr_tegra = renewA(bool, frontier_curr_tegra, n);
-    changedTegra = renewA(bool, changed, n);
-#endif
     frontier_next = renewA(bool, frontier_next, n);
     changed = renewA(bool, changed, n);
     retract = renewA(bool, retract, n);
@@ -535,16 +505,8 @@ public:
   void freeVertexSubsets() {
     deleteA(all);
     deleteA(frontier_curr);
-    deleteA(frontier_next_delta);
-#if defined(MECHINE_ITER) || defined(tegra_calc)
-    deleteA(frontier_init_tegra);
-#endif
     deleteA(frontier_next);
     deleteA(changed);
-#ifdef MECHINE_ITER
-    deleteA(changedTegra);
-    deleteA(frontier_curr_tegra);
-#endif
     deleteA(retract);
     deleteA(propagate);
   }
@@ -553,16 +515,8 @@ public:
     parallel_for(long j = start_index; j < end_index; j++) {
       all[j] = 1;
       frontier_curr[j] = 0;
-      frontier_next_delta[j] = 0;
       frontier_next[j] = 0;
       changed[j] = 0;
-#if defined(MECHINE_ITER) || defined(tegra_calc)
-      frontier_init_tegra[j] = 0;
-#endif
-#ifdef MECHINE_ITER
-      changedTegra[j] = 0;
-      frontier_curr_tegra[j] = 0;
-#endif
       retract[j] = 0;
       propagate[j] = 0;
     }
@@ -637,23 +591,20 @@ public:
       edgeArray &edge_deletions = ingestor.getEdgeDeletions();
       // ingestor.edge_additions and ingestor.edge_deletions have been added
       // to the graph datastructure. Now, refine using it.
-#ifdef MECHINE_ITER
-      if(graphbolt_iterations == 0) {
-        log_to_file("tegra_calc_start\n");
-        parallel_for(uintV v = 0; v < n; v++) {
-          frontier_curr[v] = 0;
-        }
-        tegraCompute(int(1), edge_additions, edge_deletions);
-      } else {
-        log_to_file("graphbolt_calc_start\n");
+#if defined(MECHINE_ITER)
+      log_to_file("switch_calc_start\n");
+      if (graphbolt_iterations > 0) {
         deltaCompute(edge_additions, edge_deletions);
+      } else {
+        initialCompute();//不需要存储顶点值
       }
 #elif defined(delta_calc)
-      log_to_file("graphbolt_calc_start\n");
+      log_to_file("graphBolt_calc_start\n");
       deltaCompute(edge_additions, edge_deletions);
 #elif defined(tegra_calc)
       log_to_file("tegra_calc_start\n");
       tegraCompute(int(1), edge_additions, edge_deletions);
+      // tegraCompute(edge_additions, edge_deletions);
 #else
       log_to_file("trad_calc_start\n");
       initialCompute();
@@ -676,7 +627,6 @@ public:
     parallel_for(uintV v = 0; v < n; v++) {
       frontier_next[v] = 0;
       frontier_curr[v] = 0;
-      frontier_next_delta[v] = 0;
       frontier_curr[v] = forceActivateVertexForIteration(v, 1, global_info);
     }
     int iters = traditionalIncrementalComputation(1);
@@ -693,12 +643,20 @@ public:
   
   virtual void tegraCompute(int start_iteration, edgeArray &edge_additions,
                             edgeArray &edge_deletions) = 0;
+
+  // virtual void tegraCompute(edgeArray &edge_additions,
+                            // edgeArray &edge_deletions) = 0;
   // ======================================================================
   // ADAPTIVE SWITCHING TO TRADITIONAL INCREMENTAL COMPUTATION
   // ======================================================================
+  double avg_iter_time = 0.0;
+  double sum_iter_time = 0.0;
+  double robust = 0.5;
   bool shouldSwitch(int iter, double dz_inc_iter_time) {
     if (iter > 0) {
-      if (adaptive_executor.approximateTimeForCurrIter() < dz_inc_iter_time) {
+      sum_iter_time += dz_inc_iter_time;
+      avg_iter_time = sum_iter_time / iter;
+      if (adaptive_executor.approximateTimeForCurrIter() < (robust * avg_iter_time + (1 - robust) * dz_inc_iter_time)) {
         return true;
       }
     }
@@ -717,7 +675,7 @@ public:
     long active_edges =
         sequence::plusReduceDegree(my_graph.V, frontier_next, (long)n);
     adaptive_executor.updateApproximateTimeForEdges(active_edges);
-
+    // cout << " tradition appropriate time " << adaptive_executor.approximateTimeForCurrIter() << " "; 
     return false;
   }
 
