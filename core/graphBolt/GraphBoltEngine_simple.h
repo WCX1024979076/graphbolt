@@ -249,7 +249,7 @@ public:
         converged_iteration = iter;
         if (frontier_curr_vs.isEmpty()) {
           break;
-        } 
+        }
       }
     }
     log_to_file("\n");
@@ -334,11 +334,11 @@ public:
           if (~frontier_curr[v]) {
           // check for propagate and retract for the vertices.
             intE inDegree = my_graph.V[v].getInDegree();
-            aggregation_values_tmp[v] = vertexValueIdentity<VertexValueType>();
+            aggregation_values_tmp[v] = aggregationValueIdentity<AggregationValueType>();
           
             granular_for(i, 0, inDegree, (inDegree > 1024), {
               uintV u = my_graph.V[v].getInNeighbor(i);
-              AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
+              AggregationValueType contrib_change = aggregationValueIdentity<AggregationValueType>();
               sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
                   u, contrib_change, vertexValueIdentity<VertexValueType>(),
                   vertex_values[iter - 2][u], global_info);
@@ -377,11 +377,11 @@ public:
         if (frontier_curr[v]) {
           // check for propagate and retract for the vertices.
           intE inDegree = my_graph.V[v].getInDegree();
-          aggregation_values_tmp[v] = vertexValueIdentity<VertexValueType>();
+          aggregation_values_tmp[v] = aggregationValueIdentity<AggregationValueType>();
           
           granular_for(i, 0, inDegree, (inDegree > 1024), {
             uintV u = my_graph.V[v].getInNeighbor(i);
-            AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
+            AggregationValueType contrib_change = aggregationValueIdentity<AggregationValueType>();
             sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
                 u, contrib_change, vertexValueIdentity<VertexValueType>(),
                 vertex_values[iter - 1][u], global_info);
@@ -513,7 +513,7 @@ public:
       frontier_curr[v] = 0;
       frontier_next[v] = 0;
       changed[v] = 0;
-      aggregation_values_tmp[v] = 0;
+      aggregation_values_tmp[v] = aggregationValueIdentity<AggregationValueType>();
       vertex_value_old_prev[v] = vertexValueIdentity<VertexValueType>();
       vertex_value_old_curr[v] = vertexValueIdentity<VertexValueType>();
       initializeVertexValue<VertexValueType>(v, vertex_value_old_next[v],
@@ -733,9 +733,9 @@ public:
       parallel_for(uintV v = 0; v < n; v++) {
         // changed vertices need to be processed
         frontier_curr[v] = 0;
-        // if ((v >= n_old) && (changed[v] == false)) {
-          // changed[v] = forceComputeVertexForIteration(v, iter, global_info);
-        //}
+        if ((v >= n_old) && (frontier_next[v] == false)) {
+          frontier_next[v] = forceComputeVertexForIteration(v, iter, global_info);
+        }
 
         if (frontier_next[v]) {
           // delta has the current cumulative change for the vertex.

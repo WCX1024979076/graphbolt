@@ -1,6 +1,7 @@
 *.dSYM
 /SSSP
 /LabelPropagation
+/LpTrad
 /PageRank
 /PageRankDelta
 /PageRankTrad
@@ -14,3 +15,5 @@
 /PageRankAe
 /PageRankTegra
 /PageRankMechine
+/LpTegra
+/LpDelta

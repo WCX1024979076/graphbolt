@@ -28,7 +28,8 @@ int parallel_main(int argc, char *argv[]) {
     unsigned int seed = time(nullptr);
     srand(seed);
     
-    commandLine P(argc, argv, "[-s] <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <addrate> <batchsize> <batchtime> <output_pagerank>");
+    commandLine P(argc, argv, "[-s] <output seed file > <input SNAP file> <output base ADJ file> <output edgeOperations File> <baserate> <addrate> <batchsize> <batchtime> <output_pagerank>");
+    char *sFile = P.getArgument(8);
     char *iFile = P.getArgument(7);
     char *obFile = P.getArgument(6);
     char *oeFile = P.getArgument(5);
@@ -66,7 +67,13 @@ int parallel_main(int argc, char *argv[]) {
             ingraph[i] = false;
         }
     }
-
+    ofstream seed_obfile;
+    seed_obfile.open(sFile, ios::out);
+    for(uintV i = 0; i < G.nonZeros; i++)
+    {
+        seed_obfile << rand() % 100 << endl;
+    }
+    seed_obfile.close();
     // cout << "G.nonZeros " << G.nonZeros << "\n";
     // cout << "Bnums " << Bnums << "\n";
     ofstream output_obfile;

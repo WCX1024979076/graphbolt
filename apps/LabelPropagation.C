@@ -447,6 +447,7 @@ void printAdditionalData(ofstream &output_file, const uintV &v,
 template <class vertex> void compute(graph<vertex> &G, commandLine config) {
   uintV n = G.n;
   int max_iters = config.getOptionLongValue("-maxIters", 10);
+  int graphbolt_iters = config.getOptionLongValue("-graphboltIters", 5);
   max_iters += 1;
   // NOTE : The seeds file is a mandatory argument. Each seed vertex is specified in a separate line in the file.  Refer "setSeedsFromFile()" fucntion for setting the seed vertices.
   string seeds_file_path =
@@ -462,7 +463,7 @@ template <class vertex> void compute(graph<vertex> &G, commandLine config) {
 
   cout << "Initializing engine ....\n";
   GraphBoltEngineSimple<vertex, LPVertexAggregationData, LPVertexData, LPInfo<vertex>>
-      engine(G, max_iters, global_info, false, config);
+      engine(G, max_iters, global_info, false, config, graphbolt_iters);
   engine.init();
   cout << "Finished initializing engine\n";
   engine.run();
