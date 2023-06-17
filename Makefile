@@ -37,7 +37,7 @@ PageRankDelta :
 	$(MAKE) -C $(apps) PageRankRunDelta
 
 PageRankTrad :
-	$(MAKE) -C $(apps) PageRankRunTrad
+	$(MAKE) -C $(apps) PageRankRunTrad OUTPUT=$(OUTPUT_STD)
 
 PageRankAe :
 	$(MAKE) -C $(apps) PageRankRunAe
