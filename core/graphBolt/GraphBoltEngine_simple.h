@@ -373,7 +373,7 @@ public:
         break;
       }
 
-      parallel_for (uintV v = 0; v < n; v++) {
+      parallel_for(uintV v = 0; v < n; v++) {
         if (frontier_curr[v]) {
           // check for propagate and retract for the vertices.
           intE inDegree = my_graph.V[v].getInDegree();
@@ -412,9 +412,9 @@ public:
           });
         }
       }
-      
-      parallel_for (uintV u = 0; u < n; u++) { 
-        if (frontier_curr[u]) {
+
+      parallel_for(uintV u = 0; u < n; u++) { 
+        if(frontier_curr[u]) {
           VertexValueType new_value;
           computeFunction(u, aggregation_values_tmp[u],
               vertex_values[iter - 1][u], new_value, global_info);
@@ -545,15 +545,32 @@ public:
     parallel_for(long i = 0; i < edge_additions.size; i++) { //增加边处理
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
+            frontier_next[destination] = 1;
+      // Update frontier and changed values
+      hasSourceChangedByUpdate(source, edge_addition_enum,
+                               frontier_curr[source], changed[source],
+                               global_info, global_info_old); //增加的边 出边 激活
+      hasSourceChangedByUpdate(destination, edge_addition_enum,
+                               frontier_curr[destination], changed[destination],
+                               global_info, global_info_old); //增加的边 入边 激活
+      if (forceActivateVertexForIteration(source, 1, global_info_old)) { //第一次迭代是否需要强制计算聚合值
 
-      frontier_curr[source] = 1;
-      AggregationValueType contrib_change; //计算聚合值?
-      if (use_source_contribution) {
-        sourceChangeInContribution<AggregationValueType, VertexValueType,
+        if (frontier_curr[source]) {
+          changed[source] = true;
+          frontier_next[source] = true;
+        }
+        if (frontier_curr[destination]) {
+          changed[source] = true;
+          frontier_next[source] = true;
+        }
+
+        AggregationValueType contrib_change; //计算聚合值?
+        if (use_source_contribution) {
+          sourceChangeInContribution<AggregationValueType, VertexValueType,
                                      GlobalInfoType>(
-            source, contrib_change, vertexValueIdentity<VertexValueType>(),
-            vertex_values[0][source], global_info_old);
-      }
+              source, contrib_change, vertexValueIdentity<VertexValueType>(),
+              vertex_values[0][source], global_info_old);
+        }
 
 // Do repropagate for edge source->destination.
 #ifdef EDGEDATA
@@ -575,21 +592,37 @@ public:
                                    global_info_old);
           }
         }
+      }
     }
 
     parallel_for(long i = 0; i < edge_deletions.size; i++) { //删除和增加同理
       uintV source = edge_deletions.E[i].source;
       uintV destination = edge_deletions.E[i].destination;
+      frontier_next[destination] = true;
+      hasSourceChangedByUpdate(source, edge_deletion_enum,
+                               frontier_curr[source], changed[source],
+                               global_info, global_info_old);
+      hasSourceChangedByUpdate(destination, edge_deletion_enum,
+                               frontier_curr[destination], changed[destination],
+                               global_info, global_info_old);
+      if (forceActivateVertexForIteration(source, 1, global_info_old)) {
+        // Update frontier and changed values
+        if (frontier_curr[source]) {
+          changed[source] = true;
+          frontier_next[source] = true;
+        }
+        if (frontier_curr[destination]) {
+          changed[source] = true;
+          frontier_next[source] = true;
+        }
 
-      frontier_curr[source] = 1;
-      frontier_next[destination] = 1;
-      AggregationValueType contrib_change;
-      if (use_source_contribution) {
-        sourceChangeInContribution<AggregationValueType, VertexValueType,
-                                    GlobalInfoType>(
-            source, contrib_change, vertexValueIdentity<VertexValueType>(),
-            vertex_values[0][source], global_info_old);
-      }
+        AggregationValueType contrib_change;
+        if (use_source_contribution) {
+          sourceChangeInContribution<AggregationValueType, VertexValueType,
+                                     GlobalInfoType>(
+              source, contrib_change, vertexValueIdentity<VertexValueType>(),
+              vertex_values[0][source], global_info_old);
+        }
 
 // Do retract for edge source->destination
 #ifdef EDGEDATA
@@ -611,8 +644,8 @@ public:
                                         global_info_old);
           }
         }
+      }
     }
-    
     pre_compute_time = pre_compute_timer.stop();
 
     // =============== INCREMENTAL COMPUTE - REFINEMENT START ================
@@ -694,7 +727,6 @@ public:
 
           granular_for(i, 0, outDegree, (outDegree > 1024), {
             uintV v = my_graph.V[u].getOutNeighbor(i);
-
             bool ret = false;
             AggregationValueType contrib_change =
                 use_source_contribution
@@ -722,7 +754,8 @@ public:
                   addToAggregationAtomic(contrib_change, delta[v], global_info);
                 }
               }
-              frontier_next[v] = 1;
+              if(!frontier_next[v])
+                frontier_next[v] = 1;
             }
           });
         }
@@ -730,6 +763,7 @@ public:
       phase_time = phase_timer.next();
 
       // ========== VERTEX COMPUTATION  ========== 将 delta[v] 进行聚合并更改值
+      bool use_delta_next_iteration = shouldUseDelta(iter + 1);
       parallel_for(uintV v = 0; v < n; v++) {
         // changed vertices need to be processed
         frontier_curr[v] = 0;
@@ -738,18 +772,18 @@ public:
         }
 
         if (frontier_next[v]) {
+          frontier_next[v] = 0;
           // delta has the current cumulative change for the vertex.
           // Update the aggregation value in history
-          frontier_next[v] = 0;
           addToAggregation(delta[v], aggregation_values[iter][v], global_info);
 
           VertexValueType new_value;
           computeFunction(v, aggregation_values[iter][v],
                           vertex_values[iter - 1][v], new_value, global_info);
 
-          // if (forceActivateVertexForIteration(v, iter + 1, global_info)) {
-            // frontier_curr[v] = 1;
-          // }
+          if (forceActivateVertexForIteration(v, iter + 1, global_info)) {
+            frontier_curr[v] = 1;
+          }
           AggregationValueType contrib_change =
               aggregationValueIdentity<AggregationValueType>();
           source_change_in_contribution[v] =
@@ -761,23 +795,35 @@ public:
           } else {
             vertex_values[iter][v] = vertex_values[iter - 1][v];
           }
-          
-          sourceChangeInContribution<AggregationValueType, VertexValueType,
+            if (use_delta_next_iteration) {
+              sourceChangeInContribution<AggregationValueType, VertexValueType,
                                          GlobalInfoType>(
                   v, contrib_change, vertex_values[iter - 1][v],
                   vertex_values[iter][v], global_info);
-          addToAggregation(contrib_change, source_change_in_contribution[v],
+            } else {
+              sourceChangeInContribution<AggregationValueType, VertexValueType,
+                                         GlobalInfoType>(
+                  v, contrib_change, vertexValueIdentity<VertexValueType>(),
+                  vertex_values[iter][v], global_info);
+            }
+            addToAggregation(contrib_change, source_change_in_contribution[v],
                              global_info);
-        
-          sourceChangeInContribution<AggregationValueType, VertexValueType,
+            if (use_delta_next_iteration) {
+              sourceChangeInContribution<AggregationValueType, VertexValueType,
                                          GlobalInfoType>(
                   v, contrib_change, vertex_value_old_curr[v],
                   vertex_value_old_next[v], global_info_old);
-         
-          removeFromAggregation(contrib_change,
+            } else {
+
+              sourceChangeInContribution<AggregationValueType, VertexValueType,
+                                         GlobalInfoType>(
+                  v, contrib_change, vertexValueIdentity<VertexValueType>(),
+                  vertex_value_old_next[v], global_info_old);
+            }
+            removeFromAggregation(contrib_change,
                                   source_change_in_contribution[v],
                                   global_info_old);
-        }
+          }
 
       }
       phase_time = phase_timer.next();
@@ -813,12 +859,17 @@ public:
                       vertex_value_old_next[source], global_info_old) ||
             (forceActivateVertexForIteration(source, iter + 1,
                                              global_info_old))) {
-          
-          sourceChangeInContribution<AggregationValueType, VertexValueType,
+          if (use_delta_next_iteration) {
+            sourceChangeInContribution<AggregationValueType, VertexValueType,
                                        GlobalInfoType>(
                 source, contrib_change, vertex_value_old_curr[source],
                 vertex_value_old_next[source], global_info_old);
-
+          } else {
+            sourceChangeInContribution<AggregationValueType, VertexValueType,
+                                       GlobalInfoType>(
+                source, contrib_change, vertexValueIdentity<VertexValueType>(),
+                vertex_value_old_next[source], global_info_old);
+          }
 // Do repropagate for edge source->destination.
 #ifdef EDGEDATA
           EdgeData *edge_data = edge_additions.E[i].edgeData;
@@ -875,12 +926,17 @@ public:
             (forceActivateVertexForIteration(source, iter + 1,
                                              global_info_old))) {
           // Do repropagate for edge source->destination.
-       
-          sourceChangeInContribution<AggregationValueType, VertexValueType,
+          if (use_delta_next_iteration) {
+            sourceChangeInContribution<AggregationValueType, VertexValueType,
                                        GlobalInfoType>(
                 source, contrib_change, vertex_value_old_curr[source],
                 vertex_value_old_next[source], global_info_old);
-         
+          } else {
+            sourceChangeInContribution<AggregationValueType, VertexValueType,
+                                       GlobalInfoType>(
+                source, contrib_change, vertexValueIdentity<VertexValueType>(),
+                vertex_value_old_next[source], global_info_old);
+          }
 #ifdef EDGEDATA
           EdgeData *edge_data = edge_deletions.E[i].edgeData;
 #else
@@ -947,14 +1003,13 @@ public:
       performSwitchInc(graphbolt_iterations, edge_additions, edge_deletions);
     }
 #endif
-    cout << endl;
+
     cout << "Finished batch all : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << converged_iteration << "\n";
     // testPrint();
     log_to_file("\n");
     printOutput();
   }
-
 
   // Refactor this in a better way
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
