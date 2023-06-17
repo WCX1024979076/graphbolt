@@ -1,6 +1,6 @@
 PWD             = $(shell pwd)
 FILE_NAME       = Wiki-Vote
-BATCH_SIZE      = 1000
+BATCH_SIZE      = 100
 BATCH_TIME      = 1
 SNAP_VERTEX_NUM = 524288
 SNAP_EDGE_NUM   = 7340032
@@ -37,7 +37,7 @@ PageRankDelta :
 	$(MAKE) -C $(apps) PageRankRunDelta
 
 PageRankTrad :
-	$(MAKE) -C $(apps) PageRankRunTrad
+	$(MAKE) -C $(apps) PageRankRunTrad OUTPUT=$(OUTPUT_STD)
 
 PageRankAe :
 	$(MAKE) -C $(apps) PageRankRunAe
@@ -50,7 +50,16 @@ PageRankMechine:
 
 PageRankRuns :
 	$(MAKE) -C $(apps) PageRankRuns
-	
+
+LpTrad :
+	$(MAKE) -C $(apps) LpRunTrad OUTPUT=$(OUTPUT_STD)
+
+LpDelta :
+	$(MAKE) -C $(apps) LpRunDelta
+
+LpTegra :
+	$(MAKE) -C $(apps) LpRunTegra
+
 RMAT_Generator:
 	$(MAKE) -C $(tools)/PaRMAT/Release RMAT_Generator
 
@@ -88,7 +97,7 @@ RunPy:
 		python3 run.py; \
 	done
 
-MechineRun: 
+MechineRun: Generator Snap2Adj RF_PREDICT
 	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
 	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
 	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)

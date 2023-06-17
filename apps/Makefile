@@ -36,6 +36,24 @@ all: $(ALL)
 % : %.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
 
+LpTrad : LabelPropagation.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
+
+LpDelta : LabelPropagation.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
+
+LpTegra : LabelPropagation.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Dtegra_calc $< $(LDFLAGS) -o $@
+
+LpRunTrad : LpTrad
+	taskset -c $(CORE_LIST) ./LpTrad -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT)  -seedsFile ../inputs/$(FILE_NAME)_seed_file ../inputs/$(FILE_NAME)_init.adj 
+
+LpRunDelta : LpDelta
+	taskset -c $(CORE_LIST) ./LpDelta -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT)  -seedsFile ../inputs/$(FILE_NAME)_seed_file ../inputs/$(FILE_NAME)_init.adj 
+
+LpRunTegra : LpTegra
+	taskset -c $(CORE_LIST) ./LpTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT)  -seedsFile ../inputs/$(FILE_NAME)_seed_file ../inputs/$(FILE_NAME)_init.adj 
+
 PageRankDelta : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
 

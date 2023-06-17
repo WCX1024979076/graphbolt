@@ -347,11 +347,11 @@ public:
           if (~frontier_curr[v]) {
           // check for propagate and retract for the vertices.
             intE inDegree = my_graph.V[v].getInDegree();
-            aggregation_values_tmp[v] = vertexValueIdentity<VertexValueType>();
+            aggregation_values_tmp[v] = aggregationValueIdentity<AggregationValueType>();
           
             granular_for(i, 0, inDegree, (inDegree > 1024), {
               uintV u = my_graph.V[v].getInNeighbor(i);
-              AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
+              AggregationValueType contrib_change = aggregationValueIdentity<AggregationValueType>();
               sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
                   u, contrib_change, vertexValueIdentity<VertexValueType>(),
                   vertex_values[iter - 2][u], global_info);
@@ -392,11 +392,11 @@ public:
         if (frontier_curr[v]) {
           // check for propagate and retract for the vertices.
           intE inDegree = my_graph.V[v].getInDegree();
-          aggregation_values_tmp[v] = vertexValueIdentity<VertexValueType>();
+          aggregation_values_tmp[v] = aggregationValueIdentity<AggregationValueType>();
           
           granular_for(i, 0, inDegree, (inDegree > 1024), {
             uintV u = my_graph.V[v].getInNeighbor(i);
-            AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
+            AggregationValueType contrib_change = aggregationValueIdentity<AggregationValueType>();
             sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
                 u, contrib_change, vertexValueIdentity<VertexValueType>(),
                 vertex_values[iter - 1][u], global_info);
