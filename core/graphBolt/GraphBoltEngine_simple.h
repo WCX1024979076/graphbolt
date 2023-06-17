@@ -545,7 +545,7 @@ public:
     parallel_for(long i = 0; i < edge_additions.size; i++) { //增加边处理
       uintV source = edge_additions.E[i].source;
       uintV destination = edge_additions.E[i].destination;
-            frontier_next[destination] = 1;
+      frontier_next[destination] = 1;
       // Update frontier and changed values
       hasSourceChangedByUpdate(source, edge_addition_enum,
                                frontier_curr[source], changed[source],
@@ -591,6 +591,8 @@ public:
             addToAggregationAtomic(contrib_change, delta[destination],
                                    global_info_old);
           }
+          if (!changed[destination])
+            changed[destination] = true;
         }
       }
     }
@@ -643,6 +645,8 @@ public:
             removeFromAggregationAtomic(contrib_change, delta[destination],
                                         global_info_old);
           }
+          if (!changed[destination])
+            changed[destination] = true;
         }
       }
     }
@@ -756,6 +760,8 @@ public:
               }
               if(!frontier_next[v])
                 frontier_next[v] = 1;
+              if (!changed[v])
+                changed[v] = 1;
             }
           });
         }
@@ -767,11 +773,13 @@ public:
       parallel_for(uintV v = 0; v < n; v++) {
         // changed vertices need to be processed
         frontier_curr[v] = 0;
-        if ((v >= n_old) && (frontier_next[v] == false)) {
+        if ((v >= n_old) && (changed[v] == false)) {
           frontier_next[v] = forceComputeVertexForIteration(v, iter, global_info);
+          changed[v] = forceComputeVertexForIteration(v, iter, global_info);
         }
 
         if (frontier_next[v]) {
+          frontier_curr[v] = 0;
           frontier_next[v] = 0;
           // delta has the current cumulative change for the vertex.
           // Update the aggregation value in history
@@ -789,12 +797,10 @@ public:
           source_change_in_contribution[v] =
               aggregationValueIdentity<AggregationValueType>();
 
-          if (notDelZero(new_value, vertex_value_old_next[v], global_info_old) || notDelZero(new_value, vertex_values[iter - 1][v], global_info)) {
+          if (notDelZero(new_value, vertex_values[iter - 1][v], global_info)) {
+            // change is significant. Update vertex_values
             vertex_values[iter][v] = new_value;
             frontier_curr[v] = 1;
-          } else {
-            vertex_values[iter][v] = vertex_values[iter - 1][v];
-          }
             if (use_delta_next_iteration) {
               sourceChangeInContribution<AggregationValueType, VertexValueType,
                                          GlobalInfoType>(
@@ -808,6 +814,17 @@ public:
             }
             addToAggregation(contrib_change, source_change_in_contribution[v],
                              global_info);
+
+
+          } else {
+            // change is not significant. Copy vertex_values[iter-1]
+            vertex_values[iter][v] = vertex_values[iter - 1][v];
+          }
+
+          if (notDelZero(vertex_value_old_next[v], vertex_value_old_curr[v],
+                        global_info_old)) {
+            // change is significant. Update v_change
+            frontier_curr[v] = 1;
             if (use_delta_next_iteration) {
               sourceChangeInContribution<AggregationValueType, VertexValueType,
                                          GlobalInfoType>(
@@ -824,37 +841,21 @@ public:
                                   source_change_in_contribution[v],
                                   global_info_old);
           }
-
+        } else if(changed[v]) {
+          vertex_values[iter][v] = vertex_values[iter - 1][v];
+          aggregation_values[iter][v] = aggregation_values[iter - 1][v];
+        }
       }
       phase_time = phase_timer.next();
-      
+
       // ========== EDGE COMPUTATION - DIRECT CHANGES - for next iter ========== 计算下次迭代
       bool has_direct_changes = false;
       parallel_for(long i = 0; i < edge_additions.size; i++) {
         uintV source = edge_additions.E[i].source;
         uintV destination = edge_additions.E[i].destination;
-
-        frontier_curr[source] = 1;
-
-        AggregationValueType contrib_change =
-              aggregationValueIdentity<AggregationValueType>();
-        source_change_in_contribution[source] =
-              aggregationValueIdentity<AggregationValueType>();
-
-        sourceChangeInContribution<AggregationValueType, VertexValueType,
-                                         GlobalInfoType>(
-                  source, contrib_change, vertex_values[iter - 1][source],
-                  vertex_values[iter][source], global_info);
-        addToAggregation(contrib_change, source_change_in_contribution[source],
-                             global_info);
-        sourceChangeInContribution<AggregationValueType, VertexValueType,
-                                         GlobalInfoType>(
-                  source, contrib_change, vertex_value_old_curr[source],
-                  vertex_value_old_next[source], global_info_old);
-        removeFromAggregation(contrib_change,
-                                  source_change_in_contribution[source],
-                                  global_info_old);
-        
+        AggregationValueType contrib_change;
+        frontier_next[source] = 1;
+        frontier_next[destination] = 1;
         if (notDelZero(vertex_value_old_curr[source],
                       vertex_value_old_next[source], global_info_old) ||
             (forceActivateVertexForIteration(source, iter + 1,
@@ -890,37 +891,20 @@ public:
               addToAggregationAtomic(contrib_change, delta[destination],
                                      global_info_old);
             }
+            if (!changed[destination])
+              changed[destination] = 1;
+            if (!has_direct_changes)
+              has_direct_changes = true;
           }
         }
       }
-      
+
       parallel_for(long i = 0; i < edge_deletions.size; i++) {
         uintV source = edge_deletions.E[i].source;
         uintV destination = edge_deletions.E[i].destination;
-
-        frontier_curr[source] = 1;
+        AggregationValueType contrib_change;
+        frontier_next[source] = 1;
         frontier_next[destination] = 1;
-
-        AggregationValueType contrib_change =
-              aggregationValueIdentity<AggregationValueType>();
-        source_change_in_contribution[source] =
-              aggregationValueIdentity<AggregationValueType>();
-
-        sourceChangeInContribution<AggregationValueType, VertexValueType,
-                                         GlobalInfoType>(
-                  source, contrib_change, vertex_values[iter - 1][source],
-                  vertex_values[iter][source], global_info);
-        addToAggregation(contrib_change, source_change_in_contribution[source],
-                             global_info);
-
-        sourceChangeInContribution<AggregationValueType, VertexValueType,
-                                         GlobalInfoType>(
-                  source, contrib_change, vertex_value_old_curr[source],
-                  vertex_value_old_next[source], global_info_old);
-        removeFromAggregation(contrib_change,
-                                  source_change_in_contribution[source],
-                                  global_info_old);
-        
         if (notDelZero(vertex_value_old_curr[source],
                       vertex_value_old_next[source], global_info_old) ||
             (forceActivateVertexForIteration(source, iter + 1,
@@ -957,6 +941,10 @@ public:
               removeFromAggregationAtomic(contrib_change, delta[destination],
                                           global_info_old);
             }
+            if (!changed[destination])
+              changed[destination] = 1;
+            if (!has_direct_changes)
+              has_direct_changes = true;
           }
         }
       }
