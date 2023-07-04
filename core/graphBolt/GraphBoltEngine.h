@@ -139,10 +139,17 @@ template <class AggregationValueType, class VertexValueType,
           class GlobalInfoType>
 inline void computeFunction(const uintV &v,
                             const AggregationValueType &aggregation_value,
+                            const VertexValueType &vertex_value_curr,
+                            VertexValueType &vertex_value_next,
+                            GlobalInfoType &global_info);
+
+template <class AggregationValueType, class VertexValueType,
+          class GlobalInfoType>
+inline void addToVertexValue(const uintV &v,
+                            const AggregationValueType &incoming_value,
                             const VertexValueType &vertex_value_prev,
                             VertexValueType &vertex_value_curr,
                             GlobalInfoType &global_info);
-
 // Function which determines whether a vertex value has converged. For PageRank,
 // if the |vertex_value_curr - vertex_value_prev| < 0.01, the vertex value does
 // not have significant change to push to its outNeighbors in the next
@@ -271,7 +278,7 @@ public:
   RWLock *vertex_locks;
 
   // Dependency information
-  AggregationValueType **aggregation_values;
+  //AggregationValueType **aggregation_values;
   AggregationValueType *aggregation_values_tmp;
   VertexValueType **vertex_values;
 
@@ -376,29 +383,12 @@ public:
       vertex_values[i] = newA(VertexValueType, n);
     }
     aggregation_values_tmp = newA(AggregationValueType, n);
-#ifdef MECHINE_ITER
-    aggregation_values = newA(AggregationValueType *, graphbolt_iterations);
-    for(int i = 0; i < graphbolt_iterations; i++) {   
-#else
-    aggregation_values = newA(AggregationValueType *, history_iterations);
-    for (int i = 0; i < history_iterations; i++) { 
-#endif
-      aggregation_values[i] = newA(AggregationValueType, n);
-    }
   }
   void resizeDependencyData() {
     for (int i = 0; i < history_iterations; i++) {
       vertex_values[i] = renewA(VertexValueType, vertex_values[i], n);
     }
     aggregation_values_tmp = renewA(AggregationValueType, aggregation_values_tmp, n);
-#ifdef MECHINE_ITER
-    for (int i = 0; i < graphbolt_iterations; i++) {
-#else
-    for (int i = 0; i < history_iterations; i++) {
-#endif
-      aggregation_values[i] =
-          renewA(AggregationValueType, aggregation_values[i], n);
-    }
     initDependencyData(n_old, n);
   }
   void freeDependencyData() {
@@ -406,14 +396,6 @@ public:
       deleteA(vertex_values[i]);
     }
     deleteA(aggregation_values_tmp);
-#ifdef MECHINE_ITER
-    for(int i = 0; i < graphbolt_iterations; i++) {
-#else
-    for (int i = 0; i < history_iterations; i++) {
-#endif
-      deleteA(aggregation_values[i]);
-    }
-    deleteA(aggregation_values);
     deleteA(vertex_values);
   }
   void initDependencyData() { initDependencyData(0, n); }
@@ -427,17 +409,6 @@ public:
     parallel_for(long v = start_index; v < end_index; v++) {
         initializeAggregationValue<AggregationValueType, GlobalInfoType>(
             v, aggregation_values_tmp[v], global_info);
-    }
-#ifdef MECHINE_ITER
-    for(int iter = 0; iter < graphbolt_iterations; iter++) {
-#else
-    
-    for (int iter = 0; iter < history_iterations; iter++) {
-#endif
-      parallel_for(long v = start_index; v < end_index; v++) {
-        initializeAggregationValue<AggregationValueType, GlobalInfoType>(
-            v, aggregation_values[iter][v], global_info);
-      }
     }
   }
 
@@ -547,8 +518,8 @@ public:
       cout << "Vertex " << curr << "\n";
       cout << "Indegree " << my_graph.V[curr].getInDegree() << "\n";
       cout << "Outdegree " << my_graph.V[curr].getOutDegree() << "\n";
-      printHistory(curr, aggregation_values, vertex_values, global_info,
-                   converged_iteration);
+      //printHistory(curr, aggregation_values, vertex_values, global_info,
+                   //converged_iteration);
     }
   }
 
@@ -594,10 +565,11 @@ public:
       // to the graph datastructure. Now, refine using it.
 #if defined(MECHINE_ITER)
       log_to_file("switch_calc_start\n");
-      if (graphbolt_iterations > 0) {
-        deltaCompute(edge_additions, edge_deletions);
+      cout << "graphbolt_iterations " << graphbolt_iterations << endl;
+      if (graphbolt_iterations == 0) { 
+        tegraCompute(int(1), edge_additions, edge_deletions);
       } else {
-        initialCompute();//不需要存储顶点值
+        deltaCompute(edge_additions, edge_deletions);
       }
 #elif defined(delta_calc)
       log_to_file("graphBolt_calc_start\n");
@@ -605,9 +577,11 @@ public:
 #elif defined(tegra_calc)
       log_to_file("tegra_calc_start\n");
       tegraCompute(int(1), edge_additions, edge_deletions);
-      // tegraCompute(edge_additions, edge_deletions);
 #else
       log_to_file("trad_calc_start\n");
+      parallel_for(uintV v = 0; v < n; v++) { 
+        aggregation_values_tmp[v] = aggregationValueIdentity<AggregationValueType>();
+      }
       initialCompute();
 #endif
 
@@ -654,6 +628,7 @@ public:
   double sum_iter_time = 0.0;
   double robust = 0.5;
   bool shouldSwitch(int iter, double dz_inc_iter_time) {
+    cout << "shouldSwitch" << endl;
     if (iter > 0) {
       sum_iter_time += dz_inc_iter_time;
       avg_iter_time = sum_iter_time / iter;

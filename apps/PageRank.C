@@ -211,6 +211,17 @@ inline void computeFunction(const uintV &v,
       (1 - global_info.damping) + (global_info.damping * aggregation_value);
 }
 
+template <class AggregationValueType, class VertexValueType,
+          class GlobalInfoType>
+inline void addToVertexValue(const uintV &v,
+                            const AggregationValueType &incoming_value,
+                            const VertexValueType &vertex_value_curr,
+                            VertexValueType &vertex_value_next,
+                            GlobalInfoType &global_info) {
+  vertex_value_next =
+      vertex_value_curr + (global_info.damping * incoming_value);
+}
+
 template <class VertexValueType, class GlobalInfoType>
 inline bool notDelZero(const VertexValueType &value_curr, //判断前后变化是否超过阈值
                       const VertexValueType &value_next,
@@ -288,8 +299,8 @@ void printAdditionalData(ofstream &output_file, const uintV &v,
 template <class vertex> void compute(graph<vertex> &G, commandLine config) { //计算函数
   uintV n = G.n;
   int max_iters = config.getOptionLongValue("-maxIters", 20);
-  int graphbolt_iters = config.getOptionLongValue("-graphboltIters", 5);
-  int tegra_iters = config.getOptionLongValue("-tegraIters", 10);
+  int graphbolt_iters = config.getOptionLongValue("-graphboltIters", 0);
+  int tegra_iters = config.getOptionLongValue("-tegraIters", 0);
   double epsilon = config.getOptionDoubleValue("-epsilon", 0.0000001d);
   max_iters += 1;
   double damping = 0.85;
