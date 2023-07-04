@@ -27,10 +27,16 @@ scaler_loaded.scale_ = stddev_loaded
 with open('./tools/mechine_rf/rf_model.pkl', 'rb') as f:
   rf_model = pickle.load(f)
 
+# 加载模型
+with open('./tools/mechine_rf/rf_model1.pkl', 'rb') as f:
+  rf_model1 = pickle.load(f)
+
 # 预测迭代次数
 test_data = [[batch_size, snap_vertex_num, snap_edge_num, batch_add_rate, degree_avg]]
 test_data = scaler_loaded.transform(test_data)
 
 predicted_graphbolt_iter = rf_model.predict(test_data)
+predicted_graphbolt_iter1 = rf_model1.predict(test_data)
 
 print(int(predicted_graphbolt_iter))
+print(int(predicted_graphbolt_iter1))

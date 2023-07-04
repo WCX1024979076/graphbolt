@@ -35,10 +35,10 @@ class GraphBoltEngineSimple
 public:
   GraphBoltEngineSimple(graph<vertex> &_my_graph, int _max_iter,
                         GlobalInfoType &_static_data, bool _use_lock,
-                        commandLine _config, int _graphbolt_iter)
+                        commandLine _config, int _graphbolt_iter, int _trad_iter)
       : GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>(_my_graph, _max_iter, _static_data,
-                                        _use_lock, _config, _graphbolt_iter) {
+                                        _use_lock, _config, _graphbolt_iter, _trad_iter) {
     use_source_contribution = true;
   }
 
@@ -329,7 +329,7 @@ public:
 #endif
     for (int iter = start_iter; iter < max_iterations; iter++) {
       single_calc_timer.start();
-      if (iter > converged_iteration || should_switch_now) {
+      if (iter > tegra_iterations + graphbolt_iterations) {
         parallel_for(uintV v = 0; v < n; v++) {
           if (~frontier_curr[v]) {
           // check for propagate and retract for the vertices.
@@ -462,9 +462,9 @@ public:
       }
       
       iteration_time = single_calc_timer.next();
-      if (ae_enabled && shouldSwitch(iter, iteration_time)) {
-        should_switch_now = true;
-      }
+      // if (ae_enabled && shouldSwitch(iter, iteration_time)) {
+      //   should_switch_now = true;
+      // }
       log_to_file(iteration_time, " ");
       cout << "iteration_time " << iteration_time << endl;
 
@@ -591,8 +591,10 @@ public:
             addToAggregationAtomic(contrib_change, delta[destination],
                                    global_info_old);
           }
-          if (!changed[destination])
+          if (!frontier_next[destination]) {
             changed[destination] = true;
+            frontier_next[destination] = true;
+          }
         }
       }
     }
@@ -645,8 +647,10 @@ public:
             removeFromAggregationAtomic(contrib_change, delta[destination],
                                         global_info_old);
           }
-          if (!changed[destination])
+          if (!frontier_next[destination]) {
+            frontier_next[destination] = true;
             changed[destination] = true;
+          }
         }
       }
     }
@@ -773,7 +777,7 @@ public:
       parallel_for(uintV v = 0; v < n; v++) {
         // changed vertices need to be processed
         frontier_curr[v] = 0;
-        if ((v >= n_old) && (changed[v] == false)) {
+        if ((v >= n_old) && (frontier_next[v] == false)) {
           frontier_next[v] = forceComputeVertexForIteration(v, iter, global_info);
           changed[v] = forceComputeVertexForIteration(v, iter, global_info);
         }
@@ -891,8 +895,10 @@ public:
               addToAggregationAtomic(contrib_change, delta[destination],
                                      global_info_old);
             }
-            if (!changed[destination])
+            if (!frontier_next[destination]) {
+              frontier_next[destination] = 1;
               changed[destination] = 1;
+            }
             if (!has_direct_changes)
               has_direct_changes = true;
           }
@@ -941,8 +947,10 @@ public:
               removeFromAggregationAtomic(contrib_change, delta[destination],
                                           global_info_old);
             }
-            if (!changed[destination])
+            if (!frontier_next[destination]) {
+              frontier_next[destination] = 1;
               changed[destination] = 1;
+            }
             if (!has_direct_changes)
               has_direct_changes = true;
           }
@@ -985,11 +993,11 @@ public:
       iteration_time += iteration_timer.stop();
     }
 #ifdef MECHINE_ITER
-    if (should_switch_now) { //切换到传统增量计算模型
-      converged_iteration = performSwitch(graphbolt_iterations);
-    } else {
+    // if (should_switch_now) { //切换到传统增量计算模型
+    //   converged_iteration = performSwitch(graphbolt_iterations);
+    // } else {
       performSwitchInc(graphbolt_iterations, edge_additions, edge_deletions);
-    }
+    // }
 #endif
 
     cout << "Finished batch all : " << full_timer.stop() << "\n";
@@ -1010,6 +1018,8 @@ public:
                         GlobalInfoType>::history_iterations;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::graphbolt_iterations;
+  using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
+                        GlobalInfoType>::tegra_iterations;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::converged_iteration;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,

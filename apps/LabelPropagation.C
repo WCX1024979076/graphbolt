@@ -316,18 +316,18 @@ inline void computeFunction(const uintV &v,
                             VertexValueType &actual_value_next,
                             GlobalInfoType &global_info) {
 
-  if (global_info.isSeed(v)) {
+  if (global_info.isSeed(v)) { // 种子节点标签是固定的，无需进行更新
     actual_value_next = actual_value_curr;
     return;
   }
 
-  if (global_info.g->V[v].getInDegree() == 0) {
+  if (global_info.g->V[v].getInDegree() == 0) { //无入度节点，无法更新
     actual_value_next = actual_value_curr;
     return;
   }
 
   double sum = 0;
-  for (int i = 0; i < NUMBER_OF_FEATURES; i++) {
+  for (int i = 0; i < NUMBER_OF_FEATURES; i++) { // 标签归一化操作？？？归一化？？为什么要归一化？？标签传播？
     sum += aggregation_value.ngh_sum[i];
   }
 
@@ -446,7 +446,7 @@ void printAdditionalData(ofstream &output_file, const uintV &v,
 // ======================================================================
 template <class vertex> void compute(graph<vertex> &G, commandLine config) {
   uintV n = G.n;
-  int max_iters = config.getOptionLongValue("-maxIters", 10);
+  int max_iters = config.getOptionLongValue("-maxIters", 20);
   int graphbolt_iters = config.getOptionLongValue("-graphboltIters", 5);
   max_iters += 1;
   // NOTE : The seeds file is a mandatory argument. Each seed vertex is specified in a separate line in the file.  Refer "setSeedsFromFile()" fucntion for setting the seed vertices.

@@ -63,7 +63,7 @@ int parallel_main(int argc, char *argv[])
     else
     {
        fp2 = fopen("/home/wangcx/tmp/result_end_3.csv", "a");
-       fprintf(fp2, "batch_size,snap_vertex_num,snap_edge_num,batch_add_rate,degree_avg,graphbolt_iter\n");
+       fprintf(fp2, "batch_size,snap_vertex_num,snap_edge_num,batch_add_rate,degree_avg,graphbolt_iter,tegra_iter\n");
     }
     printf("BATCH_SIZE = %lld\n", batch_size);
     printf("SNAP_VERTEX_NUM = %lld\n", snap_vertex_num);
@@ -128,8 +128,9 @@ int parallel_main(int argc, char *argv[])
             n1 = ITER_NUM;
         if(n2 == -1)
             n2 = ITER_NUM;
+        n1 = min(n1, n2);
         printf("n1 = %d, n2 = %d\n", n1, n2);
-        fprintf(fp2, ",%d\n", min(n1, n2));
+        fprintf(fp2, ",%d,%d\n", n1, n2 - n1);
     }
     
     for(int j = 0; j < batch_time; j++)

@@ -289,6 +289,7 @@ template <class vertex> void compute(graph<vertex> &G, commandLine config) { //è
   uintV n = G.n;
   int max_iters = config.getOptionLongValue("-maxIters", 20);
   int graphbolt_iters = config.getOptionLongValue("-graphboltIters", 5);
+  int tegra_iters = config.getOptionLongValue("-tegraIters", 10);
   double epsilon = config.getOptionDoubleValue("-epsilon", 0.0000001d);
   max_iters += 1;
   double damping = 0.85;
@@ -297,7 +298,7 @@ template <class vertex> void compute(graph<vertex> &G, commandLine config) { //è
 
   cout << "Initializing engine ....\n";
   GraphBoltEngineSimple<vertex, double, double, PageRankInfo<vertex>> engine(
-      G, max_iters, global_info, false, config, graphbolt_iters);
+      G, max_iters, global_info, false, config, graphbolt_iters, tegra_iters);
   engine.init();
   cout << "Finished initializing engine\n";
 

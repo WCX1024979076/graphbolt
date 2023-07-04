@@ -54,6 +54,24 @@ LpRunDelta : LpDelta
 LpRunTegra : LpTegra
 	taskset -c $(CORE_LIST) ./LpTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT)  -seedsFile ../inputs/$(FILE_NAME)_seed_file ../inputs/$(FILE_NAME)_init.adj 
 
+CoemTrad : LabelPropagation.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) $< $(LDFLAGS) -o $@
+
+CoemDelta : LabelPropagation.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
+
+CoemTegra : LabelPropagation.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
+	$(PCC) $(PCFLAGS) -Dtegra_calc $< $(LDFLAGS) -o $@
+
+CoemRunTrad : CoemTrad
+	taskset -c $(CORE_LIST) ./CoemTrad -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT)  -seedsFile ../inputs/$(FILE_NAME)_seed_file ../inputs/$(FILE_NAME)_init.adj 
+
+CoemRunDelta : CoemDelta
+	taskset -c $(CORE_LIST) ./CoemDelta -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT)  -seedsFile ../inputs/$(FILE_NAME)_seed_file ../inputs/$(FILE_NAME)_init.adj 
+
+CoemRunTegra : CoemTegra
+	taskset -c $(CORE_LIST) ./CoemTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT)  -seedsFile ../inputs/$(FILE_NAME)_seed_file ../inputs/$(FILE_NAME)_init.adj 
+
 PageRankDelta : PageRank.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
 	$(PCC) $(PCFLAGS) -Ddelta_calc $< $(LDFLAGS) -o $@
 

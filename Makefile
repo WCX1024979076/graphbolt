@@ -60,6 +60,15 @@ LpDelta :
 LpTegra :
 	$(MAKE) -C $(apps) LpRunTegra
 
+CoemTrad :
+	$(MAKE) -C $(apps) CoemRunTrad OUTPUT=$(OUTPUT_STD)
+
+CoemDelta :
+	$(MAKE) -C $(apps) CoemRunDelta
+
+CoemTegra :
+	$(MAKE) -C $(apps) CoemRunTegra
+
 RMAT_Generator:
 	$(MAKE) -C $(tools)/PaRMAT/Release RMAT_Generator
 

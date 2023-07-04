@@ -263,6 +263,7 @@ public:
   // TODO: Currently, history_iterations = max_iterations
   int max_iterations;
   int graphbolt_iterations;
+  int tegra_iterations;
   int history_iterations;
   int converged_iteration;
   bool use_lock;
@@ -311,12 +312,12 @@ public:
   // ======================================================================
   GraphBoltEngine(graph<vertex> &_my_graph, int _max_iter,
                   GlobalInfoType &_global_info, bool _use_lock,
-                  commandLine _config, int _graphbolt_iter)
+                  commandLine _config, int _graphbolt_iter, int _tegra_iter)
       : my_graph(_my_graph), max_iterations(_max_iter),
         history_iterations(_max_iter), converged_iteration(0),
         global_info(_global_info), use_lock(_use_lock), global_info_old(),
         config(_config), ingestor(_my_graph, _config), current_batch(0),
-        adaptive_executor(history_iterations), graphbolt_iterations(_graphbolt_iter) {
+        adaptive_executor(history_iterations), graphbolt_iterations(_graphbolt_iter), tegra_iterations(_tegra_iter) {
     n = my_graph.n;
     n_old = 0;
     if (use_lock) {
