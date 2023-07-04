@@ -322,11 +322,6 @@ public:
 #endif
     
     bool should_switch_now = false;
-#ifndef MECHINE_ITER
-    if (ae_enabled && shouldSwitch(start_iter, 0)) {
-      should_switch_now = true;
-    }
-#endif
     for (int iter = start_iter; iter < max_iterations; iter++) {
       single_calc_timer.start();
       if (iter > tegra_iterations + graphbolt_iterations) {

@@ -119,14 +119,14 @@ int parallel_main(int argc, char *argv[])
         int n1 = -1, n2 = -1; // TODO: 修正评估算法
         for(int i = 0; i < ITER_NUM; i++)
         {
-            if(trad_data_avg[j][i] < graphbolt_data_avg[j][i] && n1 == -1)
+            if(tegra_data_avg[j][i] < graphbolt_data_avg[j][i] && n1 == -1)
                 n1 = i;
-            if(tegra_data_avg[j][i] < graphbolt_data_avg[j][i] && n2 == -1)
-                n2 = i;
+            if(trad_data_avg[j][i] < tegra_data_avg[j][i] && n2 == -1)
+                n2 = i; // tegra_data_avg
         }
         if(n1 == -1)
-            n1 = ITER_NUM;
-        if(n2 == -1)
+            n1 = ITER_NUM, n2 = ITER_NUM;
+        else if(n2 == -1)
             n2 = ITER_NUM;
         n1 = min(n1, n2);
         printf("n1 = %d, n2 = %d\n", n1, n2);
