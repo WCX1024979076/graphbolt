@@ -230,7 +230,6 @@ public:
         } 
       }
     }
-    log_to_file("\n");
     if (ae_enabled) {
       adaptive_executor.updateEquation(converged_iteration);
     }

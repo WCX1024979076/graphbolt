@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #define ITER_NUM 20
+#define CSV_PATH "/home/wangcx/tmp/result_end_4.csv"
 #define BATCH_TIME 1
 char name[100];
 
@@ -56,13 +57,13 @@ int parallel_main(int argc, char *argv[])
     scanf("DEGREE_AVG = %lld\n", &degree_avg);
 
     FILE *fp1 = freopen("/home/wangcx/tmp/notes_end.txt", "a", stdout), *fp2;
-    if(access("/home/wangcx/tmp/result_end_3.csv", F_OK) != -1)
+    if(access(CSV_PATH, F_OK) != -1)
     {
-       fp2 = fopen("/home/wangcx/tmp/result_end_3.csv", "a");
+       fp2 = fopen(CSV_PATH, "a");
     }
     else
     {
-       fp2 = fopen("/home/wangcx/tmp/result_end_3.csv", "a");
+       fp2 = fopen(CSV_PATH, "a");
        fprintf(fp2, "batch_size,snap_vertex_num,snap_edge_num,batch_add_rate,degree_avg,graphbolt_iter,tegra_iter\n");
     }
     printf("BATCH_SIZE = %lld\n", batch_size);
@@ -116,18 +117,33 @@ int parallel_main(int argc, char *argv[])
     double *trad_sum = newA(double, ITER_NUM);
     for(int j = 0; j < batch_time; j++)
     {
-        int n1 = -1, n2 = -1; // TODO: 修正评估算法
+        int GB2TG = -1, TG2TD = -1, GB2TD = -1;
         for(int i = 0; i < ITER_NUM; i++)
         {
-            if(tegra_data_avg[j][i] < graphbolt_data_avg[j][i] && n1 == -1)
-                n1 = i;
-            if(trad_data_avg[j][i] < tegra_data_avg[j][i] && n2 == -1)
-                n2 = i; // tegra_data_avg
+            if(tegra_data_avg[j][i] < graphbolt_data_avg[j][i] && GB2TG == -1)
+                GB2TG = i;
+            if(trad_data_avg[j][i] < tegra_data_avg[j][i] && TG2TD == -1)
+                TG2TD = i;
+            if(trad_data_avg[j][i] < graphbolt_data_avg[j][i] && GB2TD == -1)
+                GB2TD = i;
         }
-        if(n1 == -1)
+        int n1 = 0, n2 = 0;
+        if(GB2TG != -1 && TG2TD != -1 && GB2TD != -1)
+            n1 = GB2TG, n2 = TG2TD;
+        else if(GB2TG != -1 && TG2TD != -1 && GB2TD == -1)
+            n1 = GB2TG, n2 = TG2TD;
+        else if(GB2TG != -1 && TG2TD == -1 && GB2TD != -1)
+            n1 = GB2TG, n2 = ITER_NUM;
+        else if(GB2TG != -1 && TG2TD == -1 && GB2TD == -1)
+            n1 = GB2TG, n2 = ITER_NUM;
+        else if(GB2TG == -1 && TG2TD != -1 && GB2TD != -1)
+            n1 = GB2TD, n2 = ITER_NUM;
+        else if(GB2TG == -1 && TG2TD != -1 && GB2TD == -1)
             n1 = ITER_NUM, n2 = ITER_NUM;
-        else if(n2 == -1)
-            n2 = ITER_NUM;
+        else if(GB2TG == -1 && TG2TD == -1 && GB2TD != -1) //感觉这种情况不存在
+            n1 = GB2TD, n2 = ITER_NUM;
+        else if(GB2TG == -1 && TG2TD == -1 && GB2TD == -1)
+            n1 = ITER_NUM, n2 = ITER_NUM;
         n1 = min(n1, n2);
         printf("n1 = %d, n2 = %d\n", n1, n2);
         fprintf(fp2, ",%d,%d\n", n1, n2 - n1);

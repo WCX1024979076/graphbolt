@@ -565,7 +565,6 @@ public:
       // to the graph datastructure. Now, refine using it.
 #if defined(MECHINE_ITER)
       log_to_file("switch_calc_start\n");
-      cout << "graphbolt_iterations " << graphbolt_iterations << endl;
       if (graphbolt_iterations == 0) { 
         tegraCompute(int(1), edge_additions, edge_deletions);
       } else {
@@ -609,6 +608,7 @@ public:
     cout << "Initial graph processing : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << iters << "\n";
     printOutput();
+    log_to_file("\n");
     // testPrint();
   }
 
