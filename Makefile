@@ -11,7 +11,7 @@ OUTPUT          = ~/tmp/output1/pr_output
 DIFF            = ~/tmp/diff/pr_output
 CORE_NUM        = 52
 DEGREE_AVG      = 14
-GRAPHBOLT_ITER  = 5
+RF_OUTPUT       = -graphboltIters 5 -tegraIters 5
 
 tools  = $(PWD)/tools
 inputs = $(PWD)/inputs
@@ -19,7 +19,7 @@ apps   = $(PWD)/apps
 
 .PHONY: Snap2Adj Generator PageRank PRCompare RunAll DEL_NOTES_TXT PageRankRuns ANALYSIS RF_TRAIN RF_PREDICT PageRankDelta PageRankTrad PageRankAe PageRankTegra PageRankMechine AutoRun MechineRun
 
-export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG GRAPHBOLT_ITER
+export FILE_NAME BATCH_SIZE BATCH_TIME OUTPUT_STD OUTPUT DIFF CORE_NUM SNAP_VERTEX_NUM SNAP_EDGE_NUM BASE_GRAPH_RATE BATCH_ADD_RATE DEGREE_AVG RF_OUTPUT
 
 Generator :
 	$(MAKE) -C $(tools)/updateGenerator run
@@ -80,8 +80,8 @@ RF_TRAIN:
 	
 RF_PREDICT:
 	$(MAKE) -C $(tools)/mechine_rf PREDICT
-	$(eval GRAPHBOLT_ITER := $(shell python3 ./tools/mechine_rf/predict.py $(BATCH_SIZE) $(SNAP_VERTEX_NUM) $(SNAP_EDGE_NUM) $(BATCH_ADD_RATE) $(DEGREE_AVG)))
-	@echo "GRAPHBOLT_ITER = "  $(GRAPHBOLT_ITER)
+	$(eval RF_OUTPUT := $(shell python3 ./tools/mechine_rf/predict.py $(BATCH_SIZE) $(SNAP_VERTEX_NUM) $(SNAP_EDGE_NUM) $(BATCH_ADD_RATE) $(DEGREE_AVG)))
+	@echo "RF_OUTPUT = "  $(RF_OUTPUT)
 
 RF_EVAL:
 	$(MAKE) -C $(tools)/mechine_rf EVAL
@@ -107,9 +107,9 @@ RunPy:
 	done
 
 MechineRun: Generator Snap2Adj RF_PREDICT
-	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
-	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
-	make PageRankMechine GRAPHBOLT_ITER=$(GRAPHBOLT_ITER)
+	make PageRankMechine RF_OUTPUT="$(RF_OUTPUT)"
+	make PageRankMechine RF_OUTPUT="$(RF_OUTPUT)"
+	make PageRankMechine RF_OUTPUT="$(RF_OUTPUT)"
 	make PageRankDelta
 	make PageRankDelta
 	make PageRankDelta

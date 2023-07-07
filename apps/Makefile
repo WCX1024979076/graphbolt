@@ -100,7 +100,7 @@ PageRankRunTegra: PageRankTegra
 	taskset -c $(CORE_LIST) ./PageRankTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
 PageRankRunMechine: PageRankMechine
-	taskset -c $(CORE_LIST) ./PageRankMechine -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) -graphboltIters $(GRAPHBOLT_ITER) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRankMechine -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) $(RF_OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
 .PHONY : clean PageRankRunDelta PageRankRun PageRankRuns PageRankRunDelta PageRankRunTrad PageRankRunAe PageRankRunMechine PageRankRunTegra
 
@@ -108,9 +108,9 @@ clean :
 	rm -f *.o *.obj $(ALL)
 
 PageRankRun : PageRank
-	taskset -c $(CORE_LIST) ./PageRank -nWorkers $(CORE_NUM) -ae true -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
+	taskset -c $(CORE_LIST) ./PageRank -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj
 
-PageRankRuns : PageRankDelta PageRankAe PageRankTrad PageRankTegra
+PageRankRuns : PageRankDelta PageRankTrad PageRankTegra
 	for i in {3..5}; do \
 	taskset -c $(CORE_LIST) ./PageRankDelta -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \
 	taskset -c $(CORE_LIST) ./PageRankTegra -nWorkers $(CORE_NUM) -numberOfUpdateBatches $(BATCH_TIME) -nEdges $(BATCH_SIZE) -streamPath ../inputs/$(FILE_NAME)_operations.txt -outputFile $(OUTPUT) ../inputs/$(FILE_NAME)_init.adj; \

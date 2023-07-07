@@ -4,12 +4,13 @@ import pickle
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 
-csv_path = '/home/wangcx/tmp/result_end_3.csv'
+csv_path = '/home/wangcx/tmp/result_end_4.csv'
 # 读取数据
 data = pd.read_csv(csv_path)
 
 # 提取特征和目标变量
 features = data.drop('graphbolt_iter', axis=1)
+features = features.drop('tegra_iter', axis=1)
 target = data['graphbolt_iter']
 target1 = data['tegra_iter']
 

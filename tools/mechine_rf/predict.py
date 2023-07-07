@@ -38,5 +38,4 @@ test_data = scaler_loaded.transform(test_data)
 predicted_graphbolt_iter = rf_model.predict(test_data)
 predicted_graphbolt_iter1 = rf_model1.predict(test_data)
 
-print(int(predicted_graphbolt_iter))
-print(int(predicted_graphbolt_iter1))
+print("-graphboltIters %d -tegraIters %d"%(int(predicted_graphbolt_iter),int(predicted_graphbolt_iter1)))
