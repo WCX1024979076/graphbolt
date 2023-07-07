@@ -302,6 +302,7 @@ public:
   bool *all;
   bool *frontier_curr;
   bool *frontier_next;
+  bool *frontier_next_tegra;
   bool *changed;
   bool *retract;
   bool *propagate;
@@ -461,6 +462,7 @@ public:
     all = newA(bool, n);
     frontier_curr = newA(bool, n);
     frontier_next = newA(bool, n);
+    frontier_next_tegra = newA(bool, n);
     changed = newA(bool, n);
     retract = newA(bool, n);
     propagate = newA(bool, n);
@@ -469,6 +471,7 @@ public:
     all = renewA(bool, all, n);
     frontier_curr = renewA(bool, frontier_curr, n);
     frontier_next = renewA(bool, frontier_next, n);
+    frontier_next_tegra = renewA(bool, frontier_next_tegra, n);
     changed = renewA(bool, changed, n);
     retract = renewA(bool, retract, n);
     propagate = renewA(bool, propagate, n);
@@ -478,6 +481,7 @@ public:
     deleteA(all);
     deleteA(frontier_curr);
     deleteA(frontier_next);
+    deleteA(frontier_next_tegra);
     deleteA(changed);
     deleteA(retract);
     deleteA(propagate);
@@ -488,6 +492,7 @@ public:
       all[j] = 1;
       frontier_curr[j] = 0;
       frontier_next[j] = 0;
+      frontier_next_tegra[j] = 0;
       changed[j] = 0;
       retract[j] = 0;
       propagate[j] = 0;
@@ -600,6 +605,7 @@ public:
     // initialization of the GraphBoltEngine
     parallel_for(uintV v = 0; v < n; v++) {
       frontier_next[v] = 0;
+      frontier_next_tegra[v] = 0;
       frontier_curr[v] = 0;
       frontier_curr[v] = forceActivateVertexForIteration(v, 1, global_info);
     }

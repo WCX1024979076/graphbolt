@@ -255,6 +255,7 @@ public:
     parallel_for(uintV v = 0; v < n; v++) {
       frontier_curr[v] = 0;
       frontier_next[v] = 0;
+      frontier_next_tegra[v] = 0;
     }
 
     global_info_old.copy(global_info);
@@ -268,6 +269,7 @@ public:
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
+        frontier_next_tegra[v] = 1;
       });
     }
 
@@ -276,10 +278,12 @@ public:
       uintV destination = edge_deletions.E[i].destination;
       
       frontier_curr[destination] = 1;
+      frontier_next_tegra[destination] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
+        frontier_next_tegra[v] = 1;
       });
     }
 #else
@@ -305,6 +309,7 @@ if (graphbolt_iterations == 0) {
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
+        frontier_next_tegra[v] = 1;
       });
     }
 
@@ -313,13 +318,36 @@ if (graphbolt_iterations == 0) {
       uintV destination = edge_deletions.E[i].destination;
       
       frontier_curr[destination] = 1;
+      frontier_next_tegra[destination] = 1;
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
         uintV v = my_graph.V[source].getOutNeighbor(i);
         frontier_curr[v] = 1;
+        frontier_next_tegra[v] = 1;
       });
     }
   } else {
+    parallel_for(long i = 0; i < edge_additions.size; i++) { 
+      uintV source = edge_deletions.E[i].source;
+      
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_next_tegra[v] = 1;
+      });
+    }
+
+    parallel_for(long i = 0; i < edge_deletions.size; i++) {
+      uintV source = edge_deletions.E[i].source;
+      uintV destination = edge_deletions.E[i].destination;
+      
+      frontier_next_tegra[destination] = 1;
+      intE outDegree = my_graph.V[source].getOutDegree();
+      granular_for(i, 0, outDegree, (outDegree > 1024), {
+        uintV v = my_graph.V[source].getOutNeighbor(i);
+        frontier_next_tegra[v] = 1;
+      });
+    }
     parallel_for(uintV v = 0; v < n; v++) {
       if (frontier_curr[v] == 1) {
         intE outDegree = my_graph.V[v].getOutDegree();
@@ -441,29 +469,7 @@ if (graphbolt_iterations == 0) {
             vertex_values[iter][u] = vertex_values[iter - 1][u];
           }
         }
-      }
-
-      parallel_for(long i = 0; i < edge_additions.size; i++) { 
-        uintV source = edge_additions.E[i].source;
-        uintV destination = edge_additions.E[i].destination;
-
-        intE outDegree = my_graph.V[source].getOutDegree();
-        granular_for(i, 0, outDegree, (outDegree > 1024), {
-          uintV v = my_graph.V[source].getOutNeighbor(i);
-          frontier_next[v] = 1;
-        });
-      }
-
-      parallel_for(long i = 0; i < edge_deletions.size; i++) {
-        uintV source = edge_deletions.E[i].source;
-        uintV destination = edge_deletions.E[i].destination;
-
-        frontier_next[destination] = 1;
-        intE outDegree = my_graph.V[source].getOutDegree();
-        granular_for(i, 0, outDegree, (outDegree > 1024), {
-          uintV v = my_graph.V[source].getOutNeighbor(i);
-          frontier_next[v] = 1;
-        });
+        frontier_next[u] |= frontier_next_tegra[u];
       }
      
       vertexSubset temp_vs(n, frontier_curr);
@@ -1043,6 +1049,8 @@ if (graphbolt_iterations == 0) {
                         GlobalInfoType>::frontier_curr;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::frontier_next;
+  using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
+                        GlobalInfoType>::frontier_next_tegra;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,
                         GlobalInfoType>::changed;
   using GraphBoltEngine<vertex, AggregationValueType, VertexValueType,

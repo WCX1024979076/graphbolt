@@ -137,11 +137,11 @@ int parallel_main(int argc, char *argv[])
         else if(GB2TG != -1 && TG2TD == -1 && GB2TD == -1)
             n1 = GB2TG, n2 = ITER_NUM;
         else if(GB2TG == -1 && TG2TD != -1 && GB2TD != -1)
-            n1 = GB2TD, n2 = ITER_NUM;
+            n1 = GB2TD, n2 = GB2TD;
         else if(GB2TG == -1 && TG2TD != -1 && GB2TD == -1)
             n1 = ITER_NUM, n2 = ITER_NUM;
-        else if(GB2TG == -1 && TG2TD == -1 && GB2TD != -1) //感觉这种情况不存在
-            n1 = GB2TD, n2 = ITER_NUM;
+        else if(GB2TG == -1 && TG2TD == -1 && GB2TD != -1)
+            n1 = GB2TD, n2 = GB2TD;
         else if(GB2TG == -1 && TG2TD == -1 && GB2TD == -1)
             n1 = ITER_NUM, n2 = ITER_NUM;
         n1 = min(n1, n2);

@@ -1,6 +1,6 @@
 PWD             = $(shell pwd)
-FILE_NAME       = Wiki-Vote
-BATCH_SIZE      = 100
+FILE_NAME       = RMAT
+BATCH_SIZE      = 1000
 BATCH_TIME      = 1
 SNAP_VERTEX_NUM = 524288
 SNAP_EDGE_NUM   = 7340032
@@ -106,7 +106,7 @@ RunPy:
 		python3 run.py; \
 	done
 
-MechineRun: Generator Snap2Adj RF_PREDICT
+MechineRun: RMAT_Generator Generator Snap2Adj RF_PREDICT
 	make PageRankMechine RF_OUTPUT="$(RF_OUTPUT)"
 	make PageRankMechine RF_OUTPUT="$(RF_OUTPUT)"
 	make PageRankMechine RF_OUTPUT="$(RF_OUTPUT)"
