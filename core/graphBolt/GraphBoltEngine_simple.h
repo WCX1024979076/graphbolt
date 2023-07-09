@@ -328,7 +328,7 @@ if (graphbolt_iterations == 0) {
     }
   } else {
     parallel_for(long i = 0; i < edge_additions.size; i++) { 
-      uintV source = edge_deletions.E[i].source;
+      uintV source = edge_additions.E[i].source;
       
       intE outDegree = my_graph.V[source].getOutDegree();
       granular_for(i, 0, outDegree, (outDegree > 1024), {
@@ -449,27 +449,22 @@ if (graphbolt_iterations == 0) {
               }
             } 
           });
-        }
-      }
-
-      parallel_for (uintV u = 0; u < n; u++) { 
-        if (frontier_curr[u]) {
           VertexValueType new_value;
-          computeFunction(u, aggregation_values_tmp[u],
-              vertex_values[iter - 1][u], new_value, global_info);
-          if (notDelZero(new_value, vertex_values[iter][u], global_info_old) || notDelZero(new_value, vertex_values[iter - 1][u], global_info)) {
-              vertex_values[iter][u] = new_value;
-              frontier_next[u] = 1;
-              intE outDegree = my_graph.V[u].getOutDegree();
+          computeFunction(v, aggregation_values_tmp[v],
+              vertex_values[iter - 1][v], new_value, global_info);
+          if (notDelZero(new_value, vertex_values[iter][v], global_info_old) || notDelZero(new_value, vertex_values[iter - 1][v], global_info)) {
+              vertex_values[iter][v] = new_value;
+              frontier_next[v] = 1;
+              intE outDegree = my_graph.V[v].getOutDegree();
               granular_for(i, 0, outDegree, (outDegree > 1024), {
-                uintV v = my_graph.V[u].getOutNeighbor(i);
-                frontier_next[v] = 1;
+                uintV u = my_graph.V[v].getOutNeighbor(i);
+                frontier_next[u] = 1;
               });
           } else {
-            vertex_values[iter][u] = vertex_values[iter - 1][u];
+            vertex_values[iter][v] = vertex_values[iter - 1][v];
           }
         }
-        frontier_next[u] |= frontier_next_tegra[u];
+        frontier_next[v] |= frontier_next_tegra[v];
       }
      
       vertexSubset temp_vs(n, frontier_curr);
@@ -478,7 +473,7 @@ if (graphbolt_iterations == 0) {
         frontier_next[u] = 0;
       }
       
-      iteration_time = single_calc_timer.next();
+      iteration_time = single_calc_timer.stop();
       log_to_file(iteration_time, " ");
       cout << "tegra iteration_time " << iteration_time << endl;
 
