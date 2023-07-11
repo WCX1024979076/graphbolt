@@ -571,7 +571,11 @@ public:
 #if defined(MECHINE_ITER)
       log_to_file("switch_calc_start\n");
       if (graphbolt_iterations == 0) { 
-        tegraCompute(int(1), edge_additions, edge_deletions);
+        if (tegra_iterations != 0) {
+          tegraCompute(int(1), edge_additions, edge_deletions);
+        } else {
+          initialCompute();
+        }
       } else {
         deltaCompute(edge_additions, edge_deletions);
       }
