@@ -376,7 +376,7 @@ if (graphbolt_iterations == 0) {
             intE inDegree = my_graph.V[v].getInDegree();
             aggregation_values_tmp[v] = vertexValueIdentity<VertexValueType>();
           
-            granular_for(i, 0, inDegree, (inDegree > 1024), {
+            for(int i = 0; i < inDegree; i++) {
               uintV u = my_graph.V[v].getInNeighbor(i);
               AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
               sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
@@ -394,19 +394,9 @@ if (graphbolt_iterations == 0) {
                                contrib_change, global_info);
 
               if (ret) {
-                if (use_lock) {
-                  vertex_locks[v].writeLock();
-                  if (ret) {
-                    addToAggregation(contrib_change, aggregation_values_tmp[v], global_info);
-                  }
-                  vertex_locks[v].unlock();
-                } else {
-                  if (ret) {
-                    addToAggregationAtomic(contrib_change, aggregation_values_tmp[v] , global_info);
-                  }
-                }
-              } 
-            });
+                addToAggregation(contrib_change, aggregation_values_tmp[v] , global_info);
+              }
+            }
           }
         }
         converged_iteration = performSwitch(iter);
@@ -418,7 +408,7 @@ if (graphbolt_iterations == 0) {
           intE inDegree = my_graph.V[v].getInDegree();
           aggregation_values_tmp[v] = vertexValueIdentity<VertexValueType>();
           
-          granular_for(i, 0, inDegree, (inDegree > 1024), {
+          for(int i = 0; i < inDegree; i++) {
             uintV u = my_graph.V[v].getInNeighbor(i);
             AggregationValueType contrib_change = vertexValueIdentity<VertexValueType>();
             sourceChangeInContribution<AggregationValueType COMMA VertexValueType COMMA GlobalInfoType>(
@@ -436,19 +426,9 @@ if (graphbolt_iterations == 0) {
                                contrib_change, global_info);
 
             if (ret) {
-              if (use_lock) {
-                vertex_locks[v].writeLock();
-                if (ret) {
-                  addToAggregation(contrib_change, aggregation_values_tmp[v], global_info);
-                }
-                vertex_locks[v].unlock();
-              } else {
-                if (ret) {
-                  addToAggregationAtomic(contrib_change, aggregation_values_tmp[v] , global_info);
-                }
-              }
+              addToAggregation(contrib_change, aggregation_values_tmp[v], global_info);
             } 
-          });
+          }
           VertexValueType new_value;
           computeFunction(v, aggregation_values_tmp[v],
               vertex_values[iter - 1][v], new_value, global_info);
